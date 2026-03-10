@@ -21,42 +21,30 @@ KEY = st.secrets["supabase"]["key"]
 # --- 2. ESTILO CSS ---
 st.markdown("""
 <style>
-    /* 1. Forzar que el encabezado sea visible siempre */
+    /* 1. Encabezado visible y con fondo para contraste */
     header {
         visibility: visible !important;
-        background-color: rgba(255, 255, 255, 0.5) !important;
+        background-color: #002D57 !important; /* Barra superior azul oscuro */
+        height: 3.5rem !important;
     }
     
-    /* 2. Colores de fondo contrastados */
+    /* 2. Forzar que la flecha sea blanca sobre el fondo oscuro */
+    [data-testid="stHeader"] button {
+        color: white !important;
+        background-color: transparent !important;
+    }
+
+    /* 3. Colores de fondo de la app */
     [data-testid="stAppViewContainer"] {
-        background-color: #9BF0FB !important; /* Azul claro de fondo */
+        background-color: #9BF0FB !important;
     }
     
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important; /* Blanco sólido para el menú */
+        background-color: #FFFFFF !important;
         border-right: 2px solid #002D57 !important;
     }
 
-    /* 3. HACER QUE EL BOTÓN SEA IMPOSIBLE DE IGNORAR */
-    /* Esto busca el botón de la flecha y lo convierte en un botón azul oscuro fijo */
-    button[data-testid="baseButton-headerNoPadding"] {
-        background-color: #002D57 !important;
-        color: white !important;
-        border-radius: 5px !important;
-        width: 50px !important;
-        height: 40px !important;
-        position: fixed !important;
-        top: 10px !important;
-        left: 10px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        z-index: 999999 !important;
-        opacity: 1 !important; /* Fuerza a que no sea transparente */
-        visibility: visible !important;
-    }
-
-    /* 4. Estilo de las tarjetas estadísticas */
+    /* 4. Ajuste de las tarjetas estadísticas */
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -68,6 +56,9 @@ st.markdown("""
     }
     .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
+    
+    /* 5. Asegurar que el contenido no quede debajo de la barra azul */
+    .block-container {padding-top: 5rem !important;}
 </style>
 """, unsafe_allow_html=True)
 # --- 3. CONEXIÓN A DATOS ---
@@ -367,6 +358,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
