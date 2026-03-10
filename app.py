@@ -21,20 +21,21 @@ KEY = st.secrets["supabase"]["key"]
 # --- 2. ESTILO CSS ---
 st.markdown("""
 <style>
-    /* 1. Encabezado visible y con fondo para contraste */
+    /* 1. Encabezado sólido para que resalte la flecha */
     header {
         visibility: visible !important;
-        background-color: #002D57 !important; /* Barra superior azul oscuro */
-        height: 3.5rem !important;
+        background-color: #002D57 !important; /* Azul oscuro institucional */
     }
     
-    /* 2. Forzar que la flecha sea blanca sobre el fondo oscuro */
-    [data-testid="stHeader"] button {
+    /* 2. FORZAR FLECHA BLANCA EN PC Y MÓVIL */
+    /* Buscamos el botón y el icono SVG de la flecha */
+    [data-testid="stHeader"] button, 
+    [data-testid="stHeader"] svg {
+        fill: white !important;
         color: white !important;
-        background-color: transparent !important;
     }
 
-    /* 3. Colores de fondo de la app */
+    /* 3. Colores de fondo */
     [data-testid="stAppViewContainer"] {
         background-color: #9BF0FB !important;
     }
@@ -44,7 +45,7 @@ st.markdown("""
         border-right: 2px solid #002D57 !important;
     }
 
-    /* 4. Ajuste de las tarjetas estadísticas */
+    /* 4. Estilo de las tarjetas estadísticas */
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -57,8 +58,8 @@ st.markdown("""
     .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
     
-    /* 5. Asegurar que el contenido no quede debajo de la barra azul */
-    .block-container {padding-top: 5rem !important;}
+    /* 5. Espaciado para que el logo y títulos no queden tapados */
+    .block-container {padding-top: 4rem !important;}
 </style>
 """, unsafe_allow_html=True)
 # --- 3. CONEXIÓN A DATOS ---
@@ -358,6 +359,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
