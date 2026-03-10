@@ -33,26 +33,39 @@ st.markdown("""
         color: white !important;
     }
 
-    /* 3. MENSAJE DE GUÍA PARA EL USUARIO */
-    /* Este código crea el letrero justo debajo de la franja azul */
+    /* 3. MENSAJE DE GUÍA INTELIGENTE */
     .guia-menu {
         position: fixed;
-        top: 3.6rem; /* Justo donde termina la banda azul */
+        top: 3.6rem;
         left: 10px;
-        background-color: rgba(0, 45, 87, 0.8); /* Azul semitransparente */
+        background-color: rgba(0, 45, 87, 0.9);
         color: white;
-        padding: 5px 10px;
+        padding: 5px 12px;
         border-radius: 5px;
-        font-size: 0.8rem;
-        z-index: 999999;
-        pointer-events: none; /* Para que no estorbe si alguien intenta hacer clic a través de él */
+        font-size: 0.85rem;
+        font-weight: bold;
+        z-index: 9999;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
     }
 
-    /* 4. Colores de fondo de la app */
+    /* OCULTAR EL MENSAJE CUANDO EL MENÚ ESTÁ ABIERTO */
+    /* En computadoras y móviles, cuando el sidebar se expande, 
+       el contenedor principal cambia su margen. Usamos eso para ocultar la guía. */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ div .guia-menu,
+    section[data-testid="stSidebar"] + section .guia-menu {
+        display: none !important;
+    }
+    
+    /* Regla específica para cuando el menú tapa la pantalla en el celular */
+    div[data-tight="true"] .guia-menu {
+        display: none !important;
+    }
+
+    /* 4. Colores de fondo */
     [data-testid="stAppViewContainer"] {
         background-color: #9BF0FB !important;
     }
-    
     [data-testid="stSidebar"] {
         background-color: #FFFFFF !important;
         border-right: 2px solid #002D57 !important;
@@ -74,7 +87,7 @@ st.markdown("""
     .block-container {padding-top: 6rem !important;}
 </style>
 
-<div class="guia-menu">↑ Haga clic↑ arriba para ver el menú</div>
+<div class="guia-menu">↑ Haga clic acá para ver el menú</div>
 """, unsafe_allow_html=True)
 # --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
@@ -373,6 +386,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
