@@ -208,7 +208,7 @@ if st.session_state.menu_actual == "Inicio":
                             color='Estado', color_discrete_map={'Cargadas':'#002D57', 'Pendientes':'#FF0000'})
         fig_anillo.update_layout(showlegend=True, height=350, margin=dict(t=20, b=20, l=20, r=20),
                                  paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_anillo, use_container_width=True)
+        st.plotly_chart(fig_anillo, use_container_width=True, config={'displayModeBar': False, 'staticPlot': False})
 
     with col_graf2:
         st.markdown("<p style='text-align: center; font-weight: bold;'>RITMO DE CARGA (LÍNEA DE TIEMPO)</p>", unsafe_allow_html=True)
@@ -411,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
