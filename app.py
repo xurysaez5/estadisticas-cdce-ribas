@@ -218,7 +218,7 @@ if st.session_state.menu_actual == "Inicio":
             fig_ritmo = px.area(tendencia, x='fecha', y='registros', color_discrete_sequence=['#002D57'])
             fig_ritmo.update_layout(height=350, margin=dict(t=20, b=20, l=20, r=20),
                                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(fig_ritmo, use_container_width=True)
+            st.plotly_chart(fig_ritmo, use_container_width=True, config={'displayModeBar': False, 'staticPlot': False})
         else:
             st.info(f"No hay datos registrados para el mes de {mes_elegido}.")
 
@@ -236,7 +236,7 @@ elif st.session_state.menu_actual == "Por Institución":
             with col_b:
                 asist = datos_carga['asistencia_promedio_real'].mean() if 'asistencia_promedio_real' in datos_carga.columns else 0
                 st.markdown(f'<div class="st-card">PROM. ASISTENCIA<br><b>{asist:.1f}%</b></div>', unsafe_allow_html=True)
-            st.plotly_chart(px.bar(datos_carga, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group'), use_container_width=True)
+            st.plotly_chart(px.bar(datos_carga, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group'), use_container_width=True, config={'displayModeBar': False, 'staticPlot': False})
         else:
             st.warning("⚠️ Esta institución no tiene registros cargados.")
 
@@ -290,7 +290,7 @@ elif st.session_state.menu_actual == "Docentes":
                 )
 
                 fig_col.update_layout(showlegend=False, plot_bgcolor="rgba(0,0,0,0)", font=dict(size=14), height=500)
-                st.plotly_chart(fig_col, use_container_width=True)
+                st.plotly_chart(fig_col, use_container_width=True, config={'displayModeBar': False, 'staticPlot': False})
             else:
                 st.info(f"ℹ️ No hay registros detallados para {nivel_elegido}.")
         else:
@@ -411,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
