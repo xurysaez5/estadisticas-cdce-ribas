@@ -39,10 +39,14 @@ st.markdown("""
         background-color: #FFFFFF !important;
     }
 
-    /* 4. Asegurar que el icono de la flecha sea azul oscuro */
+/* 4. TRANSFORMAR LA FLECHA EN UN BOTÓN VISIBLE */
     button[data-testid="baseButton-headerNoPadding"] {
-        color: #002D57 !important;
-        transform: scale(1.3) !important;
+        color: white !important; /* Flecha blanca */
+        background-color: #002D57 !important; /* Fondo azul oscuro para que se vea */
+        border-radius: 8px !important; /* Bordes redondeados como un botón */
+        padding: 5px 10px !important;
+        margin-left: 10px !important;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.3) !important;
     }
 
     /* 5. Estilo de las tarjetas (Cards) */
@@ -355,6 +359,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
