@@ -344,14 +344,14 @@ elif st.session_state.menu_actual == "No Docentes":
                 fig1 = px.bar(df_graf, x="tipo_personal", y="Total", text="Total",
                                title="Cantidades por Tipo de Personal",
                                color_discrete_sequence=['#002D57'])
-                st.plotly_chart(fig1, use_container_width=True, key="bar_total_nodoc")
+                st.plotly_chart(fig1, use_container_width=True, key="bar_total_nodoc", config={'displayModeBar': False, 'staticPlot': False})
 
             with g2:
                 fig2 = px.bar(df_graf, x="tipo_personal", y="% Asistencia", text="% Asistencia",
                                title="Promedio de Asistencia por Cargo",
                                color="% Asistencia", color_continuous_scale='RdYlGn', range_color=[50, 100])
                 fig2.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-                st.plotly_chart(fig2, use_container_width=True, key="bar_perc_nodoc")
+                st.plotly_chart(fig2, use_container_width=True, key="bar_perc_nodoc", config={'displayModeBar': False, 'staticPlot': False})
 
             g3, g4 = st.columns(2)
             with g3:
@@ -360,7 +360,7 @@ elif st.session_state.menu_actual == "No Docentes":
                 fig3 = px.bar(df_gen, x="tipo_personal", y="Cantidad", color="Género",
                                title="Distribución por Género", barmode="group",
                                color_discrete_map={'varones_contratados': '#00D4FF', 'hembras_contratadas': '#FF00D4'})
-                st.plotly_chart(fig3, use_container_width=True, key="bar_gen_nodoc")
+                st.plotly_chart(fig3, use_container_width=True, key="bar_gen_nodoc", config={'displayModeBar': False, 'staticPlot': False})
 
             with g4:
                 df_comp = df_graf.melt(id_vars='tipo_personal', value_vars=['Total', 'Asistieron'],
@@ -411,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
