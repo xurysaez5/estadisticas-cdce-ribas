@@ -24,9 +24,22 @@ st.markdown("""
     header {visibility: hidden;}
     [data-testid="stHeader"] {background: rgba(0,0,0,0);}
     .block-container {padding-top: 1rem !important;}
+    
+    /* Fondo general y lateral */
     [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stSidebar"] {
         background-color: #9BF0FB !important;
     }
+
+    /* MEJORA PARA MÓVIL: Hace visible la flecha del menú lateral */
+    button[data-testid="baseButton-headerNoPadding"] {
+        background-color: white !important;
+        color: #002D57 !important;
+        border-radius: 50% !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
+        left: 10px !important;
+        top: 10px !important;
+    }
+
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -40,7 +53,6 @@ st.markdown("""
     .texto-rojo { color: #FF0000 !important; }
     </style>
     """, unsafe_allow_html=True)
-
 # --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
 def cargar_datos():
@@ -336,4 +348,5 @@ elif st.session_state.menu_actual == "Condicion":
                         </div>
                     ''', unsafe_allow_html=True)
         else:
+
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
