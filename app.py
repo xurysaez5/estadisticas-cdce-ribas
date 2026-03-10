@@ -21,21 +21,34 @@ KEY = st.secrets["supabase"]["key"]
 # --- 2. ESTILO CSS ---
 st.markdown("""
 <style>
-    /* 1. Encabezado sólido para que resalte la flecha */
+    /* 1. Encabezado sólido */
     header {
         visibility: visible !important;
-        background-color: #002D57 !important; /* Azul oscuro institucional */
+        background-color: #002D57 !important;
     }
     
-    /* 2. FORZAR FLECHA BLANCA EN PC Y MÓVIL */
-    /* Buscamos el botón y el icono SVG de la flecha */
-    [data-testid="stHeader"] button, 
-    [data-testid="stHeader"] svg {
+    /* 2. Forzar flecha blanca */
+    [data-testid="stHeader"] button, [data-testid="stHeader"] svg {
         fill: white !important;
         color: white !important;
     }
 
-    /* 3. Colores de fondo */
+    /* 3. MENSAJE DE GUÍA PARA EL USUARIO */
+    /* Este código crea el letrero justo debajo de la franja azul */
+    .guia-menu {
+        position: fixed;
+        top: 3.6rem; /* Justo donde termina la banda azul */
+        left: 10px;
+        background-color: rgba(0, 45, 87, 0.8); /* Azul semitransparente */
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        z-index: 999999;
+        pointer-events: none; /* Para que no estorbe si alguien intenta hacer clic a través de él */
+    }
+
+    /* 4. Colores de fondo de la app */
     [data-testid="stAppViewContainer"] {
         background-color: #9BF0FB !important;
     }
@@ -45,7 +58,7 @@ st.markdown("""
         border-right: 2px solid #002D57 !important;
     }
 
-    /* 4. Estilo de las tarjetas estadísticas */
+    /* 5. Estilo de las tarjetas estadísticas */
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -58,9 +71,10 @@ st.markdown("""
     .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
     
-    /* 5. Espaciado para que el logo y títulos no queden tapados */
-    .block-container {padding-top: 4rem !important;}
+    .block-container {padding-top: 6rem !important;}
 </style>
+
+<div class="guia-menu">↑ Haga clic acá para ver el menú</div>
 """, unsafe_allow_html=True)
 # --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
@@ -359,6 +373,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
