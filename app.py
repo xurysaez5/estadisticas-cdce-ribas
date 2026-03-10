@@ -20,15 +20,14 @@ KEY = st.secrets["supabase"]["key"]
 
 # --- 2. ESTILO CSS ---
 st.markdown("""
-    <style>
+<style>
     /* 1. Hacemos visible el encabezado pero transparente */
     header {visibility: visible !important;}
     [data-testid="stHeader"] {
         background: rgba(0,0,0,0) !important;
-        color: #002D57 !important;
     }
     
-    /* 2. Ajuste de espacio para que no choque con el contenido */
+    /* 2. Ajuste de espacio superior */
     .block-container {padding-top: 3rem !important;}
     
     /* 3. Colores de fondo */
@@ -37,13 +36,13 @@ st.markdown("""
     }
     
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important; /* Blanco para que el menú sea legible */
+        background-color: #FFFFFF !important;
     }
 
-    /* 4. Asegurar que el icono de la flecha sea azul oscuro y grande */
+    /* 4. Asegurar que el icono de la flecha sea azul oscuro */
     button[data-testid="baseButton-headerNoPadding"] {
         color: #002D57 !important;
-        transform: scale(1.2); /* Lo hace un poco más grande para dedos móviles */
+        transform: scale(1.3) !important;
     }
 
     /* 5. Estilo de las tarjetas (Cards) */
@@ -58,24 +57,8 @@ st.markdown("""
     .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
     .texto-rojo { color: #FF0000 !important; }
-    </style>
-    """, unsafe_allow_html=True)
-
-    /* 4. Estilo de las tarjetas (Cards) */
-    .st-card {
-        background-color: #FFFFFF !important;
-        padding: 20px;
-        border-radius: 10px;
-        border: 1px solid #002D57;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-    .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
-    .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
-    .texto-rojo { color: #FF0000 !important; }
-    </style>
-    """, unsafe_allow_html=True)
-# --- 3. CONEXIÓN A DATOS ---
+</style>
+""", unsafe_allow_html=True)# --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
 def cargar_datos():
     try:
@@ -372,5 +355,6 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
