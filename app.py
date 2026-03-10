@@ -71,18 +71,33 @@ st.markdown("""
         border-right: 2px solid #002D57 !important;
     }
 
-    /* 5. Estilo de las tarjetas estadísticas */
+    /* 5. Estilo de las tarjetas estadísticas (Blindado contra Modo Oscuro) */
     .st-card {
-        background-color: #FFFFFF !important;
-        padding: 20px;
+        background-color: #FFFFFF !important; /* Fondo siempre blanco */
+        color: #002D57 !important;            /* Texto siempre azul oscuro */
+        padding: 15px !important;             /* Un poco más de aire para el móvil */
         border-radius: 10px;
-        border: 1px solid #002D57;
+        border: 2px solid #002D57 !important; /* Borde más definido */
         text-align: center;
         margin-bottom: 10px;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
-    .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
-    .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
+
+    /* Forzamos el color azul en el título para que no se ponga blanco */
+    .tit-pequeno { 
+        font-size: 1.2rem !important; 
+        font-weight: bold; 
+        color: #002D57 !important; 
+    }
+
+    /* Forzamos el color azul en el valor y ajustamos el tamaño para que quepa en el celular */
+    .val-pequeno { 
+        font-size: 2.8rem !important; /* Bajamos de 3.5 a 2.8 para evitar que el número se salga */
+        font-weight: 800; 
+        color: #002D57 !important; 
+        margin: 0;
+        line-height: 1.2;
+    }
     
     .block-container {padding-top: 6rem !important;}
     /* MEJORA DE CONTRASTE PARA ALERTAS (st.warning) */
@@ -411,6 +426,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
