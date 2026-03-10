@@ -87,7 +87,7 @@ st.markdown("""
     .block-container {padding-top: 6rem !important;}
 </style>
 
-<div class="guia-menu">↑ Haga clic acá para ver el menú</div>
+<div class="guia-menu">↑ Haga clic encima de la flecha</div>
 """, unsafe_allow_html=True)
 # --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
@@ -386,6 +386,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
