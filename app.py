@@ -96,6 +96,20 @@ st.markdown("""
     [data-testid="stNotification"] svg {
         fill: #000000 !important;
     }
+    /* CAMBIO TOTAL AL RECTÁNGULO DE ADVERTENCIA */
+    [data-testid="stNotification"] {
+        background-color: #B00020 !important; /* Rojo fuerte */
+        color: white !important;               /* Texto blanco puro */
+        border: 2px solid #5f0000 !important;  /* Borde oscuro para dar profundidad */
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+    
+    /* Forzar que el icono (la advertencia) también sea blanco */
+    [data-testid="stNotification"] svg {
+        fill: white !important;
+        color: white !important;
+    }
 </style>
 
 <div class="guia-menu">↑ Haga clic encima de la flecha</div>
@@ -397,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
