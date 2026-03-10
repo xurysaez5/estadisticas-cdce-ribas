@@ -368,7 +368,7 @@ elif st.session_state.menu_actual == "No Docentes":
                 fig4 = px.bar(df_comp, x="tipo_personal", y="Cantidad", color="Estatus",
                                title="Comparativa: Contratados vs Asistieron", barmode="group",
                                color_discrete_map={'Total': '#002D57', 'Asistieron': '#00D4FF'})
-                st.plotly_chart(fig4, use_container_width=True, key="bar_comp_nodoc")
+                st.plotly_chart(fig4, use_container_width=True, key="bar_comp_nodoc", config={'displayModeBar': False, 'staticPlot': False})
         else:
             st.warning(f"No hay registros de personal No Docente en {mes_elegido}.")
 
@@ -411,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
