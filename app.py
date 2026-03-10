@@ -141,8 +141,8 @@ if 'menu_actual' not in st.session_state:
     st.session_state.menu_actual = "Inicio"
 
 with st.sidebar:
-    if os.path.exists("logo_cdce.png"):
-        st.image("logo_cdce.png", use_container_width=True)
+    if os.path.exists("logo definitivo1.png"):
+        st.image("logo definitivo1.png", use_container_width=True)
     st.write("---")
     st.button("🏠 INICIO", on_click=lambda: setattr(st.session_state, 'menu_actual', 'Inicio'), use_container_width=True)
     st.button("🏫 POR INSTITUCIÓN", on_click=lambda: setattr(st.session_state, 'menu_actual', 'Por Institución'), use_container_width=True)
@@ -411,6 +411,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
