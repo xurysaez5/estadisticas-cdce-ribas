@@ -85,6 +85,17 @@ st.markdown("""
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
     
     .block-container {padding-top: 6rem !important;}
+    /* MEJORA DE CONTRASTE PARA ALERTAS (st.warning) */
+    [data-testid="stNotification"] {
+        background-color: #FFEB3B !important; /* Un amarillo más sólido y vibrante */
+        color: #000000 !important; /* Texto negro puro para máxima legibilidad */
+        border: 2px solid #FFC107 !important; /* Borde oscuro para definir la caja */
+    }
+    
+    /* Asegura que el icono de la advertencia también sea visible */
+    [data-testid="stNotification"] svg {
+        fill: #000000 !important;
+    }
 </style>
 
 <div class="guia-menu">↑ Haga clic encima de la flecha</div>
@@ -386,6 +397,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
