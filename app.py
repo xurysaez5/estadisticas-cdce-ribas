@@ -21,25 +21,34 @@ KEY = st.secrets["supabase"]["key"]
 # --- 2. ESTILO CSS ---
 st.markdown("""
     <style>
+    /* 1. Ocultar cabecera y ajustar espacio superior */
     header {visibility: hidden;}
     [data-testid="stHeader"] {background: rgba(0,0,0,0);}
-    .block-container {padding-top: 1rem !important;}
+    .block-container {padding-top: 2rem !important;}
     
-    /* Fondo general y lateral */
-    [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stSidebar"] {
+    /* 2. Color de fondo para el área principal y el lateral */
+    [data-testid="stAppViewContainer"] {
         background-color: #9BF0FB !important;
     }
-
-    /* MEJORA PARA MÓVIL: Hace visible la flecha del menú lateral */
-    button[data-testid="baseButton-headerNoPadding"] {
-        background-color: white !important;
-        color: #002D57 !important;
-        border-radius: 50% !important;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.2) !important;
-        left: 10px !important;
-        top: 10px !important;
+    
+    [data-testid="stSidebar"] {
+        background-color: #f0f2f6 !important; /* Un gris muy claro para que el menú se distinga */
     }
 
+    /* 3. FORZAR VISIBILIDAD DE LA FLECHA EN MÓVIL */
+    /* Este bloque busca el botón específico y lo resalta */
+    .st-emotion-cache-hp888p, [data-testid="baseButton-headerNoPadding"] {
+        background-color: #002D57 !important; /* Fondo azul oscuro */
+        color: white !important; /* Flecha blanca */
+        border-radius: 50% !important;
+        left: 10px !important;
+        top: 10px !important;
+        display: flex !important;
+        z-index: 1000000 !important;
+        visibility: visible !important;
+    }
+
+    /* 4. Estilo de las tarjetas (Cards) */
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -350,3 +359,4 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
