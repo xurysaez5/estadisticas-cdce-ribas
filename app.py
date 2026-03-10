@@ -21,35 +21,42 @@ KEY = st.secrets["supabase"]["key"]
 # --- 2. ESTILO CSS ---
 st.markdown("""
 <style>
-    /* 1. Hacemos visible el encabezado pero transparente */
-    header {visibility: visible !important;}
-    [data-testid="stHeader"] {
-        background: rgba(0,0,0,0) !important;
+    /* 1. Forzar que el encabezado sea visible siempre */
+    header {
+        visibility: visible !important;
+        background-color: rgba(255, 255, 255, 0.5) !important;
     }
     
-    /* 2. Ajuste de espacio superior */
-    .block-container {padding-top: 3rem !important;}
-    
-    /* 3. Colores de fondo */
+    /* 2. Colores de fondo contrastados */
     [data-testid="stAppViewContainer"] {
-        background-color: #9BF0FB !important;
+        background-color: #9BF0FB !important; /* Azul claro de fondo */
     }
     
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
+        background-color: #FFFFFF !important; /* Blanco sólido para el menú */
+        border-right: 2px solid #002D57 !important;
     }
 
-/* 4. TRANSFORMAR LA FLECHA EN UN BOTÓN VISIBLE */
+    /* 3. HACER QUE EL BOTÓN SEA IMPOSIBLE DE IGNORAR */
+    /* Esto busca el botón de la flecha y lo convierte en un botón azul oscuro fijo */
     button[data-testid="baseButton-headerNoPadding"] {
-        color: white !important; /* Flecha blanca */
-        background-color: #002D57 !important; /* Fondo azul oscuro para que se vea */
-        border-radius: 8px !important; /* Bordes redondeados como un botón */
-        padding: 5px 10px !important;
-        margin-left: 10px !important;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.3) !important;
+        background-color: #002D57 !important;
+        color: white !important;
+        border-radius: 5px !important;
+        width: 50px !important;
+        height: 40px !important;
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 999999 !important;
+        opacity: 1 !important; /* Fuerza a que no sea transparente */
+        visibility: visible !important;
     }
 
-    /* 5. Estilo de las tarjetas (Cards) */
+    /* 4. Estilo de las tarjetas estadísticas */
     .st-card {
         background-color: #FFFFFF !important;
         padding: 20px;
@@ -57,12 +64,13 @@ st.markdown("""
         border: 1px solid #002D57;
         text-align: center;
         margin-bottom: 10px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
     .tit-pequeno { font-size: 1.3rem !important; font-weight: bold; color: #002D57; }
     .val-pequeno { font-size: 3.5rem !important; font-weight: 800; color: #002D57; margin: 0; }
-    .texto-rojo { color: #FF0000 !important; }
 </style>
-""", unsafe_allow_html=True)# --- 3. CONEXIÓN A DATOS ---
+""", unsafe_allow_html=True)
+# --- 3. CONEXIÓN A DATOS ---
 @st.cache_data(ttl=300)
 def cargar_datos():
     try:
@@ -359,6 +367,7 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
 
 
