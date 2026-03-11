@@ -2,8 +2,8 @@ import streamlit as st
 from supabase import create_client
 
 # 1. PRIMERO: Definir la conexión (La base de todo)
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
+url = st.secrets["supabase"]["url"]
+key = st.secrets["supabase"]["key"]
 supabase = create_client(url, key)
 
 # 2. SEGUNDO: La Puerta Secreta (Ahora sí conoce a 'supabase')
@@ -53,3 +53,4 @@ if st.sidebar.checkbox("Activar Formulario de Directores"):
 # 3. TERCERO: El resto de tu aplicación (Gráficos, KPIs, etc.)
 # Aquí sigue tu código normal...
 st.write("Aquí verías tus gráficos normales si la casilla estuviera desactivada.")
+
