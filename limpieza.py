@@ -1,4 +1,42 @@
 import streamlit as st
+#mosca aqui comienza limpieza
+# --- PUERTA SECRETA PARA LIMPIEZA ---
+# Solo aparecerá este botón si quieres limpiar datos
+if st.sidebar.checkbox("Activar Formulario de Directores"):
+    st.title("🛠️ Limpieza de Datos de Directores")
+    
+    # Aquí va el código que te pasé antes para filtrar las escuelas NULL
+    escuelas_pendientes = supabase.table("escuelas").select("id, nombre_actual").or_(
+        "nombre_director.is.null, cedula_director.is.null, nombre_director.eq.'', cedula_director.eq.''"
+    ).execute().data
+
+    if escuelas_pendientes:
+        opciones = {e['nombre_actual']: e['id'] for e in escuelas_pendientes}
+        with st.form("limpieza_form"):
+            seleccion = st.selectbox("Escuela a completar:", options=list(opciones.keys()))
+            col1, col2 = st.columns(2)
+            with col1:
+                n = st.text_input("Nombre Director:")
+                c = st.text_input("Cédula:")
+            with col2:
+                m = st.text_input("Correo (Opcional):")
+                t = st.text_input("Teléfono:")
+            
+            if st.form_submit_button("Guardar Datos"):
+                if n and c:
+                    supabase.table("escuelas").update({
+                        "nombre_director": n, "cedula_director": c,
+                        "correo_electronico": m if m else None, "telefono": t
+                    }).eq("id", opciones[seleccion]).execute()
+                    st.success("¡Guardado!")
+                    st.rerun()
+                else:
+                    st.error("Nombre y Cédula son obligatorios.")
+    else:
+        st.success("¡Todo al día!")
+    
+    st.stop() # ESTO ES LO IMPORTANTE: Detiene el resto de la app
+# --- FIN DE LA PUERTA SECRETA ---
 from supabase import create_client
 
 # 1. Configuración de conexión (Asegúrate de tener tus credenciales)
@@ -56,4 +94,5 @@ if escuelas_pendientes:
             else:
                 st.error("⚠️ El nombre y la cédula son obligatorios para poder crear el acceso después.")
 else:
+
     st.success("🎉 ¡Increíble! No quedan escuelas con datos de director pendientes.")
