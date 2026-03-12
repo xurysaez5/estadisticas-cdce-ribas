@@ -4,11 +4,25 @@ import pandas as pd
 import plotly.express as px
 import os
 
+# 1. CONFIGURACIÓN DE PÁGINA (Debe ser lo primero de Streamlit)
+st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
+
+# 2. CREDENCIALES Y CONEXIÓN GLOBAL
+if "supabase" not in st.secrets:
+    st.error("⚠️ Error de Seguridad: Credenciales no encontradas.")
+    st.stop()
+
+URL = st.secrets["supabase"]["url"]
+KEY = st.secrets["supabase"]["key"]
+
+# AQUÍ ESTÁ EL CAMBIO CLAVE: Definir supabase globalmente
+supabase = create_client(URL, KEY) 
+
 # --- 1. INICIALIZAR ESTADO DE SESIÓN ---
 if 'autenticado' not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.usuario_id = None
-    st.session_state.escuelas_asignadas = [] # Lista de IDs de sus escuelas
+    st.session_state.escuelas_asignadas = []
 
 # --- 2. PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
@@ -22,43 +36,41 @@ if not st.session_state.autenticado:
                 p_ingresada = st.text_input("Contraseña:", type="password")
                 
                 if st.form_submit_button("Ingresar"):
-                    # Buscamos al usuario por su cédula
+                    # Ahora 'supabase' ya existe y no dará error
                     res_user = supabase.table("usuarios").select("id, password").eq("usuario", u_ingresado).execute()
                     
                     if res_user.data and res_user.data[0]['password'] == p_ingresada:
                         u_uuid = res_user.data[0]['id']
-                        
-                        # Buscamos qué escuelas tiene asignadas este usuario
                         res_permisos = supabase.table("usuario_escuelas").select("escuela_id").eq("usuario_id", u_uuid).execute()
                         
                         st.session_state.autenticado = True
                         st.session_state.usuario_id = u_uuid
-                        # Guardamos solo la lista de IDs de sus escuelas
                         st.session_state.escuelas_asignadas = [p['escuela_id'] for p in res_permisos.data]
                         
                         st.success("✅ Acceso correcto")
                         st.rerun()
                     else:
                         st.error("❌ Cédula o contraseña incorrecta")
-    st.stop() # Bloquea el resto de la app si no hay login
+    st.stop() 
 
-# --- 3. FILTRADO DE DATOS SEGÚN EL USUARIO ---
-# Ahora, en tus selectbox de escuelas, filtraremos usando st.session_state.escuelas_asignadas
+# --- 3. CARGA DE DATOS (Solo si ya pasó el login) ---
+@st.cache_data(ttl=300)
+def cargar_datos():
+    try:
+        # Aquí usamos la conexión global 'supabase'
+        esc = supabase.table("escuelas").select("*").execute()
+        est = supabase.table("estudiantes").select("*").execute()
+        # ... resto de tus tablas ...
+        return (pd.DataFrame(esc.data), pd.DataFrame(est.data), ...) # etc
+    except Exception as e:
+        st.error(f"Error de conexión: {e}")
+        return [pd.DataFrame()] * 7
+
+df_esc, df_est, df_per, df_con, df_cat_car, df_cat_con, df_cat_dep = cargar_datos()
+
+# --- 4. FILTRADO POR SEGURIDAD ---
+# Creamos el dataframe que solo tiene las escuelas del director logueado
 df_esc_autorizadas = df_esc[df_esc['id'].isin(st.session_state.escuelas_asignadas)]
-
-# --- 1. CONFIGURACIÓN Y BLINDAJE ---
-st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
-
-# BLINDAJE DE SEGURIDAD:
-# Intentamos obtener las credenciales desde st.secrets.
-# Si no existen, mostramos un aviso informativo y detenemos la ejecución.
-if "supabase" not in st.secrets:
-    st.error("⚠️ Error de Seguridad: Credenciales no encontradas.")
-    st.info("Por favor, asegúrese de tener configurado el archivo 'secrets.toml' en la carpeta '.streamlit'.")
-    st.stop()
-
-URL = st.secrets["supabase"]["url"]
-KEY = st.secrets["supabase"]["key"]
 
 # --- 2. ESTILO CSS ---
 st.markdown("""
@@ -468,5 +480,3 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
-
-
