@@ -65,7 +65,8 @@ st.markdown("""
         padding: 15px !important; border-radius: 10px; border: 2px solid #002D57 !important;
         text-align: center; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
-    .val-pequeno { font-size: 2.2rem !important; font-weight: 800; color: #002D57 !important; margin: 0; }
+    .val-kpi { font-size: 1.8rem !important; font-weight: 800; color: #002D57 !important; margin: 0; }
+    .tit-kpi { font-size: 0.9rem; font-weight: bold; color: #555; margin-bottom: 5px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,7 +88,6 @@ def cargar_datos():
 df_esc_t, df_est, df_per, df_con, df_cat_car, df_cat_con = cargar_datos()
 df_esc = df_esc_t if st.session_state.rol == 'admin' else df_esc_t[df_esc_t['id'].isin(st.session_state.escuelas_asignadas)]
 
-# CONFIGURACIÓN DE GRÁFICOS (LIMPIEZA)
 config_graf = {'displayModeBar': False}
 
 # --- 6. PANEL LATERAL ---
@@ -112,81 +112,98 @@ col_v, col_m = st.columns([3, 1])
 with col_m:
     mes_elegido = st.selectbox("Mes de Auditoría:", meses_lista)
     st.session_state.mes_global = mes_elegido
-    st.markdown(f'<div class="st-card" style="border-top: 5px solid #002D57; padding: 5px;"><p style="font-size: 1.2rem; font-weight: 800; margin:0;">{mes_elegido.upper()}</p></div>', unsafe_allow_html=True)
 
 # --- 8. MÓDULOS ---
 
-# INICIO
 if st.session_state.menu_actual == "Inicio":
-    st.markdown("<h2 style='text-align: center;'>Resumen General del Municipio</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Resumen Municipal</h2>", unsafe_allow_html=True)
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
-    total = len(df_esc)
+    total_e = len(df_esc)
     cargadas = df_mes[df_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
     
     c1, c2, c3 = st.columns(3)
-    with c1: st.markdown(f'<div class="st-card"><p>Total Escuelas</p><p class="val-pequeno">{total}</p></div>', unsafe_allow_html=True)
-    with c2: st.markdown(f'<div class="st-card"><p>Con Carga</p><p class="val-pequeno">{cargadas}</p></div>', unsafe_allow_html=True)
-    with c3: st.markdown(f'<div class="st-card"><p style="color:red">Sin Carga</p><p class="val-pequeno" style="color:red">{total-cargadas}</p></div>', unsafe_allow_html=True)
+    with c1: st.markdown(f'<div class="st-card"><p>Total Escuelas</p><p class="val-kpi">{total_e}</p></div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="st-card"><p>Con Carga</p><p class="val-kpi">{cargadas}</p></div>', unsafe_allow_html=True)
+    with c3: st.markdown(f'<div class="st-card"><p style="color:red">Pendientes</p><p class="val-kpi" style="color:red">{total_e-cargadas}</p></div>', unsafe_allow_html=True)
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
         if not df_mes.empty:
             df_g = df_mes.groupby('nivel_educativo')['total_matricula'].sum().reset_index()
-            fig_i = px.pie(df_g, values='total_matricula', names='nivel_educativo', title="Distribución de Matrícula Global", hole=0.4)
+            fig_i = px.pie(df_g, values='total_matricula', names='nivel_educativo', title="Matrícula por Nivel", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
             st.plotly_chart(fig_i, use_container_width=True, config=config_graf)
     with col_g2:
-        # Gráfico de carga
-        data_pie = pd.DataFrame({"Estado": ["Cargadas", "Pendientes"], "Cantidad": [cargadas, total-cargadas]})
-        fig_p = px.pie(data_pie, values='Cantidad', names='Estado', title="Progreso de Carga Municipal", color_discrete_sequence=['#2ECC71', '#E74C3C'])
+        data_pie = pd.DataFrame({"Estado": ["Cargadas", "Pendientes"], "Cantidad": [cargadas, total_e-cargadas]})
+        fig_p = px.pie(data_pie, values='Cantidad', names='Estado', title="Progreso de Carga", color_discrete_sequence=['#2ECC71', '#E74C3C'])
         st.plotly_chart(fig_p, use_container_width=True, config=config_graf)
 
-# POR INSTITUCIÓN
 elif st.session_state.menu_actual == "Por Institución":
-    st.markdown("<h2 style='text-align: center;'>Matrícula por Institución</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
         inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
         id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
         d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
+        
         if not d.empty:
-            fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=inst)
+            # --- NUEVOS KPIs ---
+            total_m = d['total_matricula'].sum()
+            fecha_c = pd.to_datetime(d['created_at'].iloc[0]).strftime('%d/%m/%Y')
+            
+            k1, k2 = st.columns(2)
+            with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL MATRÍCULA</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
+            with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">FECHA DE CARGA</p><p class="val-kpi">{fecha_c}</p></div>', unsafe_allow_html=True)
+            
+            fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', 
+                         barmode='group', text_auto=True, title=f"Distribución: {inst}",
+                         color_discrete_sequence=px.colors.qualitative.Safe)
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.warning("⚠️ Sin datos registrados para este mes.")
+            st.warning("⚠️ Sin datos para este mes.")
 
-# DOCENTES
 elif st.session_state.menu_actual == "Docentes":
     st.markdown("<h2 style='text-align: center;'>Personal Docente</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
         inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
         id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
         d = df_per[(df_per['escuela_id'] == id_i) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] == "Docente")]
+        
         if not d.empty:
-            # Mostramos el total como KPI antes del gráfico
-            total_doc = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
-            st.metric("Total Docentes en esta Institución", int(total_doc))
+            total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
+            st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
             
-            fig = px.bar(d, x="nivel_educativo", y=["hembras_contratadas", "varones_contratados"], barmode="group", text_auto=True, title=f"Docentes por Género - {inst}")
+            # Gráfico de barras separadas por nivel y género (Colores Cálidos)
+            df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['hembras_contratadas', 'varones_contratados'], 
+                             var_name='Género', value_name='Cantidad')
+            
+            fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
+                         barmode="group", text_auto=True, title=f"Docentes por Nivel: {inst}",
+                         color_discrete_sequence=['#FF5733', '#FFC300']) # Naranja y Amarillo
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.info("No hay registros de docentes.")
+            st.info("No hay registros.")
 
-# NO DOCENTES
 elif st.session_state.menu_actual == "No Docentes":
-    st.markdown("<h2 style='text-align: center;'>Personal Administrativo, Obrero y Cocineras</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
         inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
         id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
         d = df_per[(df_per['escuela_id'] == id_i) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] != "Docente")]
+        
         if not d.empty:
             df_g = d.groupby('tipo_personal')[['varones_contratados', 'hembras_contratadas']].sum().reset_index()
-            fig = px.bar(df_g, x="tipo_personal", y=["varones_contratados", "hembras_contratadas"], barmode="group", text_auto=True, title=f"No Docentes - {inst}")
+            df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['hembras_contratadas', 'varones_contratados'],
+                                var_name='Género', value_name='Cantidad')
+            
+            # Colores Verdes para No Docentes
+            fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", 
+                         barmode="group", text_auto=True, title=f"Personal de Apoyo: {inst}",
+                         color_discrete_sequence=['#27AE60', '#ABEBC6'])
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.info("No hay registros de personal no docente.")
+            st.info("No hay registros.")
 
-# CONDICIÓN LABORAL (Reincorporado)
 elif st.session_state.menu_actual == "Condicion":
-    st.markdown("<h2 style='text-align: center;'>Estatus y Condición Laboral</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
         inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
         id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
