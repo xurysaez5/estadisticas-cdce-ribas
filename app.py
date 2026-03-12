@@ -23,20 +23,21 @@ if 'autenticado' not in st.session_state:
     st.session_state.escuelas_asignadas = []
     st.session_state.menu_actual = "Inicio"
 
-# --- 3. PANTALLA DE LOGIN ---
+# --- 3. PANTALLA DE LOGIN (MEJORADA PARA MÓVILES) ---
 if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Acceso CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("login_form"):
-            u_ingresado = st.text_input("Cédula de Identidad:", placeholder="Solo números")
-            p_ingresada = st.text_input("Contraseña:", type="password")
+            # .strip() elimina espacios accidentales al escribir en celular
+            u_raw = st.text_input("Cédula de Identidad:", placeholder="Solo números").strip()
+            p_raw = st.text_input("Contraseña:", type="password").strip()
             
             if st.form_submit_button("Ingresar", use_container_width=True):
-                if u_ingresado.isdigit():
+                if u_raw.isdigit():
                     try:
-                        res_user = supabase.table("usuarios").select("id, password, rol").eq("usuario", int(u_ingresado)).execute()
-                        if res_user.data and res_user.data[0]['password'] == p_ingresada:
+                        res_user = supabase.table("usuarios").select("id, password, rol").eq("usuario", int(u_raw)).execute()
+                        if res_user.data and res_user.data[0]['password'] == p_raw:
                             user_data = res_user.data[0]
                             st.session_state.autenticado = True
                             st.session_state.usuario_id = user_data['id']
@@ -51,7 +52,7 @@ if not st.session_state.autenticado:
                     except Exception as e:
                         st.error(f"Error de conexión: {e}")
                 else:
-                    st.warning("⚠️ Ingrese solo números.")
+                    st.warning("⚠️ Ingrese solo números en la cédula.")
     st.stop()
 
 # --- 4. ESTILO CSS ---
@@ -170,28 +171,29 @@ elif st.session_state.menu_actual == "Docentes":
             total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
             st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
             
-            # 1. Estructura LONG para forzar agrupación
+            # TÉCNICA DE CHOQUE: Creamos etiquetas únicas para evitar el apilamiento
             df_plot = d.melt(id_vars=['nivel_educativo'], 
                              value_vars=['hembras_contratadas', 'varones_contratados'], 
                              var_name='Género', value_name='Cantidad')
             
-            # 2. Creación del gráfico
+            # Limpiamos el nombre del género para la leyenda
+            df_plot['Género'] = df_plot['Género'].str.replace('_contratados', '').str.replace('_contratadas', '').str.capitalize()
+
             fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
-                         barmode="group", # <--- El comando principal
-                         text_auto=True, 
+                         barmode="group", text_auto=True, title=f"Docentes por Nivel: {inst}",
                          color_discrete_sequence=['#FF5733', '#FFC300']) 
 
-            # 3. SEGURIDAD EXTRA: Forzar el modo grupo en el layout por si Plotly lo ignora
             fig.update_layout(
-                barmode='group', 
-                xaxis={'type': 'category'}, # Asegura que Maternal/Preescolar sean categorías
-                bargap=0.15, 
-                bargroupgap=0.1
+                barmode='group',
+                xaxis_title="Nivel Educativo",
+                yaxis_title="Cantidad",
+                legend_title="Género"
             )
             
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.info("No hay registros de docentes para este mes")
+            st.info("No hay registros de docentes para este mes.")
+
 elif st.session_state.menu_actual == "No Docentes":
     st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
@@ -222,11 +224,4 @@ elif st.session_state.menu_actual == "Condicion":
             d['Condición'] = d['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
             res = d.groupby(['Condición', 'Cargo']).size().reset_index(name='Cantidad')
             cols = st.columns(3)
-            for i, r in res.iterrows():
-                with cols[i % 3]:
-                    st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
-        else:
-            st.warning("Sin datos de condición laboral.")                    
-
-
-
+            for i, r in res.
