@@ -7,17 +7,19 @@ import os
 # --- 1. CONFIGURACIÓN Y BLINDAJE ---
 st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
 
+# BLINDAJE DE SEGURIDAD:
 if "supabase" not in st.secrets:
     st.error("⚠️ Error de Seguridad: Credenciales no encontradas.")
+    st.info("Por favor, asegúrese de tener configurado el archivo 'secrets.toml'.")
     st.stop()
 
 URL = st.secrets["supabase"]["url"]
 KEY = st.secrets["supabase"]["key"]
 
-# CONEXIÓN GLOBAL (Para que el Login y la Carga de datos la reconozcan)
+# Conexión Global
 supabase = create_client(URL, KEY)
 
-# --- 2. INICIALIZAR ESTADO DE SESIÓN ---
+# --- 2. GESTIÓN DE SESIÓN ---
 if 'autenticado' not in st.session_state:
     st.session_state.autenticado = False
     st.session_state.usuario_id = None
@@ -27,33 +29,31 @@ if 'autenticado' not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Sistema de Gestión CDCE RIBAS</h2>", unsafe_allow_html=True)
     
-    with st.container():
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            with st.form("login_form"):
-                u_ingresado = st.number_input("Cédula de Identidad:", step=1, value=0)
-                p_ingresada = st.text_input("Contraseña:", type="password")
-                
-                if st.form_submit_button("Ingresar"):
-                    # Verificación contra la tabla de usuarios
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("login_form"):
+            u_ingresado = st.number_input("Cédula de Identidad:", step=1, value=0)
+            p_ingresada = st.text_input("Contraseña:", type="password")
+            
+            if st.form_submit_button("Ingresar", use_container_width=True):
+                try:
                     res_user = supabase.table("usuarios").select("id, password").eq("usuario", u_ingresado).execute()
                     
                     if res_user.data and res_user.data[0]['password'] == p_ingresada:
                         u_uuid = res_user.data[0]['id']
-                        # Obtener permisos de escuelas
                         res_permisos = supabase.table("usuario_escuelas").select("escuela_id").eq("usuario_id", u_uuid).execute()
                         
                         st.session_state.autenticado = True
                         st.session_state.usuario_id = u_uuid
                         st.session_state.escuelas_asignadas = [p['escuela_id'] for p in res_permisos.data]
-                        
-                        st.success("✅ Acceso correcto")
                         st.rerun()
                     else:
                         st.error("❌ Cédula o contraseña incorrecta")
+                except Exception as e:
+                    st.error(f"Error de base de datos: {e}")
     st.stop()
 
-# --- 4. ESTILO CSS ---
+# --- 4. ESTILO CSS (INTERFAZ) ---
 st.markdown("""
 <style>
     header { visibility: visible !important; background-color: #002D57 !important; }
@@ -63,7 +63,6 @@ st.markdown("""
         color: white; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem;
         font-weight: bold; z-index: 9999; pointer-events: none;
     }
-    [data-testid="stSidebar"][aria-expanded="true"] ~ div .guia-menu { display: none !important; }
     [data-testid="stAppViewContainer"] { background-color: #9BF0FB !important; }
     [data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 2px solid #002D57 !important; }
     .st-card {
@@ -71,18 +70,14 @@ st.markdown("""
         padding: 15px !important; border-radius: 10px; border: 2px solid #002D57 !important;
         text-align: center; margin-bottom: 10px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
-    .tit-pequeno { font-size: 1.2rem !important; font-weight: bold; color: #002D57 !important; }
-    .val-pequeno { font-size: 2.8rem !important; font-weight: 800; color: #002D57 !important; margin: 0; }
-    .block-container {padding-top: 6rem !important;}
-    [data-testid="stNotification"] {
-        background-color: #B00020 !important; color: white !important;
-        border: 2px solid #5f0000 !important; border-radius: 10px !important;
-    }
+    .tit-pequeno { font-size: 1.1rem !important; font-weight: bold; color: #002D57 !important; }
+    .val-pequeno { font-size: 2.5rem !important; font-weight: 800; color: #002D57 !important; margin: 0; }
+    .texto-rojo { color: #FF0000 !important; }
 </style>
 <div class="guia-menu">↑ Haga clic encima de la flecha</div>
 """, unsafe_allow_html=True)
 
-# --- 5. CONEXIÓN A DATOS ---
+# --- 5. CARGA DE DATOS ---
 @st.cache_data(ttl=300)
 def cargar_datos():
     try:
@@ -101,11 +96,10 @@ def cargar_datos():
         st.error(f"Error de conexión: {e}")
         return [pd.DataFrame()] * 7
 
-# Ejecutar carga de datos
-df_esc, df_est, df_per, df_con, df_cat_car, df_cat_con, df_cat_dep = cargar_datos()
+df_esc_raw, df_est, df_per, df_con, df_cat_car, df_cat_con, df_cat_dep = cargar_datos()
 
-# FILTRADO DE SEGURIDAD (Solo escuelas permitidas para este usuario)
-df_esc = df_esc[df_esc['id'].isin(st.session_state.escuelas_asignadas)]
+# FILTRADO POR PERMISOS DEL USUARIO
+df_esc = df_esc_raw[df_esc_raw['id'].isin(st.session_state.escuelas_asignadas)]
 
 # --- 6. PANEL LATERAL ---
 if 'menu_actual' not in st.session_state:
@@ -122,109 +116,91 @@ with st.sidebar:
     st.button("🛠️ NO DOCENTES", on_click=lambda: setattr(st.session_state, 'menu_actual', 'No Docentes'), use_container_width=True)
     st.button("📜 CONDICIÓN LABORAL", on_click=lambda: setattr(st.session_state, 'menu_actual', 'Condicion'), use_container_width=True)
     st.write("---")
-    col_izq, col_centro, col_der = st.columns([1, 2, 1])
-    with col_centro:
-        if st.button("Cerrar Sesión", type="primary"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.rerun()
+    if st.button("Cerrar Sesión", type="primary", use_container_width=True):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
 
-# --- 7. LÓGICA DE MES DINÁMICA ---
-col_vacia, col_info = st.columns([3, 1])
-with col_info:
-    meses_lista = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
-                   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-    
+# --- 7. LÓGICA DE MES ---
+meses_lista = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+col_v, col_m = st.columns([3, 1])
+
+with col_m:
     if st.session_state.menu_actual == "Inicio":
-        mes_elegido = st.selectbox("Seleccione Mes de Auditoría:", meses_lista)
+        mes_elegido = st.selectbox("Mes de Auditoría:", meses_lista)
         st.session_state.mes_global = mes_elegido
     else:
         mes_elegido = st.session_state.get('mes_global', meses_lista[0])
+    st.markdown(f'<div class="st-card" style="border-top: 5px solid #002D57; padding: 10px;"><p style="font-size: 0.8rem; font-weight: bold; margin:0;">CONSULTA</p><p style="font-size: 1.5rem; font-weight: 800; color: #002D57; margin:0;">{mes_elegido.upper()}</p></div>', unsafe_allow_html=True)
 
-    st.markdown(f'''
-        <div class="st-card" style="border-top: 5px solid #002D57; padding: 10px;">
-            <p style="font-size: 0.8rem; font-weight: bold; margin:0;">MES CONSULTADO</p>
-            <p style="font-size: 1.8rem; font-weight: 800; color: #002D57; margin:0;">{mes_elegido.upper()}</p>
-        </div>
-    ''', unsafe_allow_html=True)
+# --- 8. MÓDULOS ---
 
-# --- 8. MÓDULOS DE VISUALIZACIÓN ---
-
-# MÓDULO INICIO
 if st.session_state.menu_actual == "Inicio":
     st.markdown("<h2 style='text-align: center;'>Resumen de Gestión de Carga</h2>", unsafe_allow_html=True)
     df_est_mes = df_est[df_est['mes_carga'] == mes_elegido] if not df_est.empty else pd.DataFrame()
-    
     total_escuelas = len(df_esc)
-    cargadas = df_est_mes['escuela_id'].nunique() if not df_est_mes.empty else 0
+    cargadas = df_est_mes[df_est_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
     pendientes = total_escuelas - cargadas
     
-    col1, col2, col3 = st.columns(3)
-    with col1: st.markdown(f'<div class="st-card"><p class="tit-pequeno">Total Instituciones</p><p class="val-pequeno">{total_escuelas}</p></div>', unsafe_allow_html=True)
-    with col2: st.markdown(f'<div class="st-card"><p class="tit-pequeno">Cargadas</p><p class="val-pequeno">{cargadas}</p></div>', unsafe_allow_html=True)
-    with col3: st.markdown(f'<div class="st-card" style="border-color:#FF0000;"><p class="tit-pequeno" style="color:#FF0000">Pendientes</p><p class="val-pequeno" style="color:#FF0000">{pendientes}</p></div>', unsafe_allow_html=True)
-    
-    st.write("---")
-    col_graf1, col_graf2 = st.columns([1, 1])
-    
-    with col_graf1:
-        st.markdown("<p style='text-align: center; font-weight: bold;'>ESTADO DE CUMPLIMIENTO</p>", unsafe_allow_html=True)
-        datos_pie = pd.DataFrame({"Estado": ["Cargadas", "Pendientes"], "Cantidad": [cargadas, pendientes]})
-        fig_anillo = px.pie(datos_pie, values='Cantidad', names='Estado', hole=0.6,
-                            color='Estado', color_discrete_map={'Cargadas':'#002D57', 'Pendientes':'#FF0000'})
-        st.plotly_chart(fig_anillo, use_container_width=True)
+    c1, c2, c3 = st.columns(3)
+    with c1: st.markdown(f'<div class="st-card"><p class="tit-pequeno">Total</p><p class="val-pequeno">{total_escuelas}</p></div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="st-card"><p class="tit-pequeno">Cargadas</p><p class="val-pequeno">{cargadas}</p></div>', unsafe_allow_html=True)
+    with c3: st.markdown(f'<div class="st-card"><p class="tit-pequeno texto-rojo">Pendientes</p><p class="val-pequeno texto-rojo">{pendientes}</p></div>', unsafe_allow_html=True)
 
-    with col_graf2:
-        st.markdown("<p style='text-align: center; font-weight: bold;'>RITMO DE CARGA</p>", unsafe_allow_html=True)
-        if not df_est_mes.empty:
-            df_est_mes['fecha'] = pd.to_datetime(df_est_mes['created_at']).dt.date
-            tendencia = df_est_mes.groupby('fecha').size().reset_index(name='registros')
-            fig_ritmo = px.area(tendencia, x='fecha', y='registros', color_discrete_sequence=['#002D57'])
-            st.plotly_chart(fig_ritmo, use_container_width=True)
-        else:
-            st.info(f"No hay datos registrados para el mes de {mes_elegido}.")
-
-# MÓDULO POR INSTITUCIÓN
 elif st.session_state.menu_actual == "Por Institución":
     st.markdown("<h2 style='text-align: center;'>Consulta por Institución</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
         seleccion = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()))
-        id_escuela = df_esc[df_esc['nombre_actual'] == seleccion]['id'].values[0]
-        datos_carga = df_est[(df_est['escuela_id'] == id_escuela) & (df_est['mes_carga'] == mes_elegido)]
-        
-        if not datos_carga.empty:
+        id_esc = df_esc[df_esc['nombre_actual'] == seleccion]['id'].values[0]
+        datos = df_est[(df_est['escuela_id'] == id_esc) & (df_est['mes_carga'] == mes_elegido)]
+        if not datos.empty:
             col_a, col_b = st.columns(2)
-            with col_a: st.markdown(f'<div class="st-card">MATRÍCULA TOTAL<br><b>{datos_carga["total_matricula"].sum()}</b></div>', unsafe_allow_html=True)
-            with col_b:
-                asist = datos_carga['asistencia_promedio_real'].mean() if 'asistencia_promedio_real' in datos_carga.columns else 0
-                st.markdown(f'<div class="st-card">PROM. ASISTENCIA<br><b>{asist:.1f}%</b></div>', unsafe_allow_html=True)
-            st.plotly_chart(px.bar(datos_carga, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group'), use_container_width=True)
-        else:
-            st.warning("⚠️ Esta institución no tiene registros cargados.")
-
-# MÓDULO DOCENTES
-elif st.session_state.menu_actual == "Docentes":
-    st.markdown("<h2 style='text-align: center;'>Análisis Pedagógico de Docentes</h2>", unsafe_allow_html=True)
-    if not df_esc.empty:
-        seleccion_esc = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()), key="sel_doc_inst")
-        id_escuela = df_esc[df_esc['nombre_actual'] == seleccion_esc]['id'].values[0]
-        df_base = df_per[(df_per['escuela_id'] == id_escuela) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] == "Docente")]
-        
-        niveles_pedagogicos = sorted(df_base['nivel_educativo'].dropna().unique().tolist())
-        if niveles_pedagogicos:
-            nivel_elegido = st.selectbox("Seleccione el Nivel Educativo:", niveles_pedagogicos, key="sel_doc_nivel")
-            df_f = df_base[df_base['nivel_educativo'] == nivel_elegido]
-            if not df_f.empty:
-                data_grafico = {
-                    "Categoría": ["Hembras (Nom)", "Varones (Nom)", "Asist. Hembras", "Asist. Varones"],
-                    "Cantidad": [df_f['hembras_contratadas'].sum(), df_f['varones_contratados'].sum(), df_f['asistencia_h'].sum(), df_f['asistencia_v'].sum()]
-                }
-                st.plotly_chart(px.bar(data_grafico, x="Categoría", y="Cantidad", color="Categoría", text_auto=True), use_container_width=True)
+            with col_a: st.markdown(f'<div class="st-card">MATRÍCULA TOTAL<br><b>{datos["total_matricula"].sum()}</b></div>', unsafe_allow_html=True)
+            with col_b: st.markdown(f'<div class="st-card">PROM. ASISTENCIA<br><b>{datos["asistencia_promedio_real"].mean():.1f}%</b></div>', unsafe_allow_html=True)
+            st.plotly_chart(px.bar(datos, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group'), use_container_width=True)
         else:
             st.warning("⚠️ Sin registros para este mes.")
 
-# MÓDULO NO DOCENTES
+elif st.session_state.menu_actual == "Docentes":
+    st.markdown("<h2 style='text-align: center;'>Análisis Pedagógico de Docentes</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        seleccion_esc = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()), key="sel_doc")
+        id_esc = df_esc[df_esc['nombre_actual'] == seleccion_esc]['id'].values[0]
+        df_f = df_per[(df_per['escuela_id'] == id_esc) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] == "Docente")]
+        niveles = sorted(df_f['nivel_educativo'].dropna().unique().tolist())
+        if niveles:
+            n_sel = st.selectbox("Nivel Educativo:", niveles)
+            df_n = df_f[df_f['nivel_educativo'] == n_sel]
+            data_g = {"Cat": ["Hembras", "Varones", "Asist. H", "Asist. V"], "Cant": [df_n['hembras_contratadas'].sum(), df_n['varones_contratados'].sum(), df_n['asistencia_h'].sum(), df_n['asistencia_v'].sum()]}
+            st.plotly_chart(px.bar(data_g, x="Cat", y="Cant", color="Cat", text_auto=True), use_container_width=True)
+        else:
+            st.warning("⚠️ Sin datos docentes.")
+
 elif st.session_state.menu_actual == "No Docentes":
     st.markdown("<h2 style='text-align: center;'>Análisis de Personal No Docente</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
-        seleccion_esc = st.selectbox("
+        seleccion_esc = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()), key="sel_nodoc")
+        id_esc = df_esc[df_esc['nombre_actual'] == seleccion_esc]['id'].values[0]
+        df_f = df_per[(df_per['escuela_id'] == id_esc) & (df_per['tipo_personal'] != "Docente") & (df_per['mes_carga'] == mes_elegido)]
+        if not df_f.empty:
+            df_g = df_f.groupby('tipo_personal')[['varones_contratados', 'hembras_contratadas']].sum().reset_index()
+            st.plotly_chart(px.bar(df_g, x="tipo_personal", y=["varones_contratados", "hembras_contratadas"], barmode="group"), use_container_width=True)
+        else:
+            st.warning("⚠️ Sin datos.")
+
+elif st.session_state.menu_actual == "Condicion":
+    st.markdown("<h2 style='text-align: center;'>Estatus y Condición Laboral</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        sel = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()), key="sel_cond")
+        id_esc = df_esc[df_esc['nombre_actual'] == sel]['id'].values[0]
+        df_p = df_con[df_con['escuela_id'] == id_esc].copy()
+        if not df_p.empty:
+            df_p['Cargo'] = df_p['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
+            df_p['Cond'] = df_p['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
+            res = df_p.groupby(['Cond', 'Cargo']).size().reset_index(name='Cant')
+            cols = st.columns(3)
+            for i, r in res.iterrows():
+                with cols[i % 3]:
+                    st.markdown(f'<div class="st-card"><p style="font-size:0.8rem; color:red;">{r["Cond"]}</p><p>{r["Cargo"]}</p><h2>{r["Cant"]}</h2></div>', unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ Sin registros.")
