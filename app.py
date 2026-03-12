@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import os
 
-# --- 1. CONFIGURACIÓN (Sidebar cerrado por defecto para móviles) ---
+# --- 1. CONFIGURACIÓN ---
 st.set_page_config(
     page_title="Estadísticas CDCE RIBAS", 
     layout="wide",
@@ -95,16 +95,16 @@ df_esc = df_esc_t if st.session_state.rol == 'admin' else df_esc_t[df_esc_t['id'
 
 config_graf = {'displayModeBar': False}
 
-# --- 6. PANEL LATERAL (OPCIONAL) ---
+# --- 6. PANEL LATERAL ---
 with st.sidebar:
     if os.path.exists("logo definitivo1.png"):
         st.image("logo definitivo1.png", use_container_width=True)
     st.write("---")
     if st.button("🏠 INICIO", use_container_width=True): st.session_state.menu_actual = "Inicio"; st.rerun()
-    if st.button("🏫 POR INSTITUCIÓN", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
+    if st.button("🏫 INSTITUCIÓN", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
     st.write("**GESTIÓN DE PERSONAL**")
     if st.button("👩‍🏫 DOCENTES", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
-    if st.button("🛠️ NO DOCENTES", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+    if st.button("🛠️ ADMINISTRATIVOS / OBREROS", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
     if st.button("📜 CONDICIÓN LABORAL", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
     st.write("---")
     if st.button("Cerrar Sesión", type="primary", use_container_width=True):
@@ -122,20 +122,13 @@ with col_m:
 
 if st.session_state.menu_actual == "Inicio":
     st.markdown("<h2 style='text-align: center;'>Menú Principal</h2>", unsafe_allow_html=True)
-    
-    # --- MENÚ DE NAVEGACIÓN RÁPIDA (PARA CELULARES) ---
     c_nav1, c_nav2 = st.columns(2)
     with c_nav1:
-        if st.button("🏫 Institución", use_container_width=True): 
-            st.session_state.menu_actual = "Por Institución"; st.rerun()
-        if st.button("👩‍🏫 Docentes", use_container_width=True): 
-            st.session_state.menu_actual = "Docentes"; st.rerun()
+        if st.button("🏫 Institución", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
+        if st.button("👩‍🏫 Docentes", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
     with c_nav2:
-        if st.button("🛠️ Apoyo", use_container_width=True): 
-            st.session_state.menu_actual = "No Docentes"; st.rerun()
-        if st.button("📜 Condición", use_container_width=True): 
-            st.session_state.menu_actual = "Condicion"; st.rerun()
-    
+        if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+        if st.button("📜 Condición", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
     st.write("---")
     
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
@@ -159,11 +152,10 @@ if st.session_state.menu_actual == "Inicio":
         st.plotly_chart(fig_p, use_container_width=True, config=config_graf)
 
 else:
-    # Botón flotante para volver al inicio en cada módulo
     if st.button("⬅️ Volver al Menú Principal"):
-        st.session_state.menu_actual = "Inicio"
-        st.rerun()
+        st.session_state.menu_actual = "Inicio"; st.rerun()
 
+    # --- MÓDULO POR INSTITUCIÓN ---
     if st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -173,19 +165,20 @@ else:
             
             if not d.empty:
                 total_m = d['total_matricula'].sum()
-                fecha_c = pd.to_datetime(d['created_at'].iloc[0]).strftime('%d/%m/%Y')
+                total_p = d['estudiantes_presentes'].sum() if 'estudiantes_presentes' in d.columns else 0
+                porc_a = (total_p / total_m * 100) if total_m > 0 else 0
                 
-                k1, k2 = st.columns(2)
-                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL MATRÍCULA</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
-                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">FECHA DE CARGA</p><p class="val-kpi">{fecha_c}</p></div>', unsafe_allow_html=True)
+                k1, k2, k3 = st.columns(3)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA</p><p class="val-kpi">{int(total_p)}</p></div>', unsafe_allow_html=True)
+                with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
                 
-                fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', 
-                             barmode='group', text_auto=True, title=f"Distribución: {inst}",
-                             color_discrete_sequence=px.colors.qualitative.Safe)
+                fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil", color_discrete_sequence=px.colors.qualitative.Safe)
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else:
                 st.warning("⚠️ Sin datos registrados.")
 
+    # --- MÓDULO DOCENTES ---
     elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Personal Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -195,39 +188,43 @@ else:
             
             if not d.empty:
                 total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
-                st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
+                presentes = d['hembras_presentes'].sum() + d['varones_presentes'].sum() if 'hembras_presentes' in d.columns else 0
+                porc_d = (presentes / total_d * 100) if total_d > 0 else 0
                 
-                df_plot = d.melt(id_vars=['nivel_educativo'], 
-                                 value_vars=['hembras_contratadas', 'varones_contratados'], 
-                                 var_name='Género', value_name='Cantidad')
+                k1, k2 = st.columns(2)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA DOCENTE</p><p class="val-kpi">{porc_d:.1f}%</p></div>', unsafe_allow_html=True)
+                
+                df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['hembras_contratadas', 'varones_contratados'], var_name='Género', value_name='Cantidad')
                 df_plot['Género'] = df_plot['Género'].str.replace('_contratadas','').str.replace('_contratados','').str.capitalize()
-
-                fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
-                             barmode="group", text_auto=True, title=f"Docentes por Nivel: {inst}",
-                             color_discrete_sequence=['#FF5733', '#FFC300']) 
+                fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", barmode="group", text_auto=True, title=f"Carga por Nivel", color_discrete_sequence=['#FF5733', '#FFC300']) 
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else:
-                st.info("No hay registros.")
+            else: st.info("No hay registros.")
 
+    # --- MÓDULO ADMINISTRATIVOS, OBREROS, COCINERAS Y VIGILANTES ---
     elif st.session_state.menu_actual == "No Docentes":
-        st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Administrativos, Obreros, Cocineras y Vigilantes</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_per[(df_per['escuela_id'] == id_i) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] != "Docente")]
             
             if not d.empty:
-                df_g = d.groupby('tipo_personal')[['varones_contratados', 'hembras_contratadas']].sum().reset_index()
-                df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['hembras_contratadas', 'varones_contratados'],
-                                    var_name='Género', value_name='Cantidad')
+                total_ad = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
+                presentes_ad = d['hembras_presentes'].sum() + d['varones_presentes'].sum() if 'hembras_presentes' in d.columns else 0
+                porc_ad = (presentes_ad / total_ad * 100) if total_ad > 0 else 0
                 
-                fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", 
-                             barmode="group", text_auto=True, title=f"Personal de Apoyo: {inst}",
-                             color_discrete_sequence=['#27AE60', '#ABEBC6'])
+                k1, k2 = st.columns(2)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL PERSONAL</p><p class="val-kpi">{int(total_ad)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA PERSONAL</p><p class="val-kpi">{porc_ad:.1f}%</p></div>', unsafe_allow_html=True)
+                
+                df_g = d.groupby('tipo_personal')[['varones_contratados', 'hembras_contratadas']].sum().reset_index()
+                df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['hembras_contratadas', 'varones_contratados'], var_name='Género', value_name='Cantidad')
+                fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", barmode="group", text_auto=True, title=f"Personal Administrativo y Obrero", color_discrete_sequence=['#27AE60', '#ABEBC6'])
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else:
-                st.info("No hay registros.")
+            else: st.info("No hay registros.")
 
+    # --- MÓDULO CONDICIÓN ---
     elif st.session_state.menu_actual == "Condicion":
         st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -240,7 +237,5 @@ else:
                 res = d.groupby(['Condición', 'Cargo']).size().reset_index(name='Cantidad')
                 cols = st.columns(3)
                 for i, r in res.iterrows():
-                    with cols[i % 3]:
-                        st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
-            else:
-                st.warning("Sin datos.")
+                    with cols[i % 3]: st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
+            else: st.warning("Sin datos.")
