@@ -169,18 +169,24 @@ elif st.session_state.menu_actual == "Docentes":
         if not d.empty:
             total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
             st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
-            
-            # --- CORRECCIÓN: Datos derretidos para forzar columnas agrupadas por nivel ---
-            df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['hembras_contratadas', 'varones_contratados'], 
+                        
+            # 1. Transformamos los datos para que Plotly entienda la separación
+            df_plot = d.melt(id_vars=['nivel_educativo'], 
+                             value_vars=['hembras_contratadas', 'varones_contratados'], 
                              var_name='Género', value_name='Cantidad')
             
-            # barmode='group' asegura que Maternal y Preescolar tengan sus propias barras separadas
-            fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
-                         barmode="group", text_auto=True, title=f"Docentes por Nivel: {inst}",
+            # 2. Creamos el gráfico forzando explícitamente el barmode='group'
+            fig = px.bar(df_plot, 
+                         x="nivel_educativo", 
+                         y="Cantidad", 
+                         color="Género", 
+                         barmode="group",  # <--- Esta es la instrucción vital
+                         text_auto=True, 
+                         title=f"Docentes por Nivel: {inst}",
                          color_discrete_sequence=['#FF5733', '#FFC300']) 
             
-            # Ajuste extra para asegurar que las etiquetas de nivel no se encimen
-            fig.update_layout(xaxis_title="Nivel Educativo", yaxis_title="Cantidad de Docentes")
+            # 3. Limpiamos ejes para que no haya rastro de la configuración anterior
+            fig.update_layout(xaxis_title="Nivel Educativo", yaxis_title="Cantidad")
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
             st.info("No hay registros de docentes para este mes.")
@@ -220,4 +226,5 @@ elif st.session_state.menu_actual == "Condicion":
                     st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
         else:
             st.warning("Sin datos de condición laboral.")                    
+
 
