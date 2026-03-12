@@ -169,28 +169,29 @@ elif st.session_state.menu_actual == "Docentes":
         if not d.empty:
             total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
             st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
-                        
-            # 1. Transformamos los datos para que Plotly entienda la separación
+            
+            # 1. Estructura LONG para forzar agrupación
             df_plot = d.melt(id_vars=['nivel_educativo'], 
                              value_vars=['hembras_contratadas', 'varones_contratados'], 
                              var_name='Género', value_name='Cantidad')
             
-            # 2. Creamos el gráfico forzando explícitamente el barmode='group'
-            fig = px.bar(df_plot, 
-                         x="nivel_educativo", 
-                         y="Cantidad", 
-                         color="Género", 
-                         barmode="group",  # <--- Esta es la instrucción vital
+            # 2. Creación del gráfico
+            fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
+                         barmode="group", # <--- El comando principal
                          text_auto=True, 
-                         title=f"Docentes por Nivel: {inst}",
                          color_discrete_sequence=['#FF5733', '#FFC300']) 
+
+            # 3. SEGURIDAD EXTRA: Forzar el modo grupo en el layout por si Plotly lo ignora
+            fig.update_layout(
+                barmode='group', 
+                xaxis={'type': 'category'}, # Asegura que Maternal/Preescolar sean categorías
+                bargap=0.15, 
+                bargroupgap=0.1
+            )
             
-            # 3. Limpiamos ejes para que no haya rastro de la configuración anterior
-            fig.update_layout(xaxis_title="Nivel Educativo", yaxis_title="Cantidad")
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.info("No hay registros de docentes para este mes.")
-
+            st.info("No hay registros de docentes para este mes")
 elif st.session_state.menu_actual == "No Docentes":
     st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
     if not df_esc.empty:
@@ -226,5 +227,6 @@ elif st.session_state.menu_actual == "Condicion":
                     st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
         else:
             st.warning("Sin datos de condición laboral.")                    
+
 
 
