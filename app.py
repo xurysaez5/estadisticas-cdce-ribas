@@ -4,18 +4,15 @@ import pandas as pd
 import plotly.express as px
 import os
 
-# --- 1. CONFIGURACIÓN Y BLINDAJE ---
+# --- 1. CONFIGURACIÓN Y SEGURIDAD ---
 st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
 
-# Verificación de secretos
 if "supabase" not in st.secrets:
     st.error("⚠️ Error: Credenciales no encontradas en secrets.toml")
     st.stop()
 
 URL = st.secrets["supabase"]["url"]
 KEY = st.secrets["supabase"]["key"]
-
-# Conexión Global a Supabase
 supabase = create_client(URL, KEY)
 
 # --- 2. GESTIÓN DE SESIÓN ---
@@ -28,22 +25,17 @@ if 'autenticado' not in st.session_state:
 # --- 3. PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Acceso CDCE RIBAS</h2>", unsafe_allow_html=True)
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("login_form"):
             u_ingresado = st.number_input("Cédula de Identidad:", step=1, value=0)
             p_ingresada = st.text_input("Contraseña:", type="password")
-            
             if st.form_submit_button("Ingresar", use_container_width=True):
                 try:
                     res_user = supabase.table("usuarios").select("id, password").eq("usuario", u_ingresado).execute()
-                    
                     if res_user.data and res_user.data[0]['password'] == p_ingresada:
                         u_uuid = res_user.data[0]['id']
-                        # Obtener escuelas permitidas para este usuario
                         res_permisos = supabase.table("usuario_escuelas").select("escuela_id").eq("usuario_id", u_uuid).execute()
-                        
                         st.session_state.autenticado = True
                         st.session_state.usuario_id = u_uuid
                         st.session_state.escuelas_asignadas = [p['escuela_id'] for p in res_permisos.data]
@@ -54,7 +46,7 @@ if not st.session_state.autenticado:
                     st.error(f"Error de conexión: {e}")
     st.stop()
 
-# --- 4. ESTILO CSS (PERSONALIZACIÓN) ---
+# --- 4. ESTILO CSS ---
 st.markdown("""
 <style>
     header { visibility: visible !important; background-color: #002D57 !important; }
@@ -88,7 +80,6 @@ def cargar_datos():
         c_car = supabase.table("cat_cargo").select("*").execute()
         c_con = supabase.table("cat_condicion").select("*").execute()
         c_dep = supabase.table("cat_dependencia").select("*").execute()
-        
         return (pd.DataFrame(esc.data), pd.DataFrame(est.data), pd.DataFrame(per.data),
                 pd.DataFrame(con.data), pd.DataFrame(c_car.data), 
                 pd.DataFrame(c_con.data), pd.DataFrame(c_dep.data))
@@ -96,10 +87,7 @@ def cargar_datos():
         st.error(f"Error cargando tablas: {e}")
         return [pd.DataFrame()] * 7
 
-# Ejecutar carga
 df_esc_total, df_est, df_per, df_con, df_cat_car, df_cat_con, df_cat_dep = cargar_datos()
-
-# Filtrar escuelas según el usuario logueado
 df_esc = df_esc_total[df_esc_total['id'].isin(st.session_state.escuelas_asignadas)]
 
 # --- 6. PANEL LATERAL ---
@@ -118,7 +106,7 @@ with st.sidebar:
         for key in list(st.session_state.keys()): del st.session_state[key]
         st.rerun()
 
-# --- 7. LÓGICA DE MES ---
+# --- 7. LÓGICA DE PERIODO ---
 meses_lista = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 col_v, col_m = st.columns([3, 1])
 with col_m:
@@ -139,4 +127,65 @@ if st.session_state.menu_actual == "Inicio":
     cargadas = df_est_mes[df_est_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
     pendientes = total_esc - cargadas
     
-    c1, c2, c3 =
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(f'<div class="st-card"><p class="tit-pequeno">Total</p><p class="val-pequeno">{total_esc}</p></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f'<div class="st-card"><p class="tit-pequeno">Cargadas</p><p class="val-pequeno">{cargadas}</p></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown(f'<div class="st-card"><p class="tit-pequeno texto-rojo">Pendientes</p><p class="val-pequeno texto-rojo">{pendientes}</p></div>', unsafe_allow_html=True)
+
+# POR INSTITUCIÓN
+elif st.session_state.menu_actual == "Por Institución":
+    st.markdown("<h2 style='text-align: center;'>Consulta por Institución</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        seleccion = st.selectbox("Seleccione la Institución:", sorted(df_esc['nombre_actual'].tolist()))
+        id_esc = df_esc[df_esc['nombre_actual'] == seleccion]['id'].values[0]
+        datos = df_est[(df_est['escuela_id'] == id_esc) & (df_est['mes_carga'] == mes_elegido)]
+        if not datos.empty:
+            st.plotly_chart(px.bar(datos, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', title=f"Matrícula - {seleccion}"), use_container_width=True)
+        else:
+            st.warning("⚠️ Sin datos para este mes.")
+
+# DOCENTES
+elif st.session_state.menu_actual == "Docentes":
+    st.markdown("<h2 style='text-align: center;'>Análisis de Docentes</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        sel_esc = st.selectbox("Institución:", sorted(df_esc['nombre_actual'].tolist()), key="doc_sel")
+        id_esc = df_esc[df_esc['nombre_actual'] == sel_esc]['id'].values[0]
+        df_f = df_per[(df_per['escuela_id'] == id_esc) & (df_per['mes_carga'] == mes_elegido) & (df_per['tipo_personal'] == "Docente")]
+        if not df_f.empty:
+            st.plotly_chart(px.bar(df_f, x="nivel_educativo", y=["hembras_contratadas", "varones_contratados"], barmode="group"), use_container_width=True)
+        else:
+            st.info("No hay personal docente registrado.")
+
+# NO DOCENTES
+elif st.session_state.menu_actual == "No Docentes":
+    st.markdown("<h2 style='text-align: center;'>Análisis de Personal No Docente</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        sel_esc = st.selectbox("Institución:", sorted(df_esc['nombre_actual'].tolist()), key="nodoc_sel")
+        id_esc = df_esc[df_esc['nombre_actual'] == sel_esc]['id'].values[0]
+        df_f = df_per[(df_per['escuela_id'] == id_esc) & (df_per['tipo_personal'] != "Docente") & (df_per['mes_carga'] == mes_elegido)]
+        if not df_f.empty:
+            df_g = df_f.groupby('tipo_personal')[['varones_contratados', 'hembras_contratadas']].sum().reset_index()
+            st.plotly_chart(px.bar(df_g, x="tipo_personal", y=["varones_contratados", "hembras_contratadas"], barmode="group"), use_container_width=True)
+        else:
+            st.info("No hay personal administrativo/obrero registrado.")
+
+# CONDICIÓN LABORAL
+elif st.session_state.menu_actual == "Condicion":
+    st.markdown("<h2 style='text-align: center;'>Estatus Laboral</h2>", unsafe_allow_html=True)
+    if not df_esc.empty:
+        sel_esc = st.selectbox("Institución:", sorted(df_esc['nombre_actual'].tolist()), key="cond_sel")
+        id_esc = df_esc[df_esc['nombre_actual'] == sel_esc]['id'].values[0]
+        df_p = df_con[df_con['escuela_id'] == id_esc].copy()
+        if not df_p.empty:
+            df_p['Cargo'] = df_p['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
+            df_p['Cond'] = df_p['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
+            res = df_p.groupby(['Cond', 'Cargo']).size().reset_index(name='Cant')
+            cols = st.columns(3)
+            for i, r in res.iterrows():
+                with cols[i % 3]:
+                    st.markdown(f'<div class="st-card"><p style="color:red; font-weight:bold;">{r["Cond"]}</p><p>{r["Cargo"]}</p><h2>{r["Cant"]}</h2></div>', unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ Sin registros de condición laboral.")
