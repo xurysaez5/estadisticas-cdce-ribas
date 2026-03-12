@@ -24,7 +24,7 @@ if 'autenticado' not in st.session_state:
 
 # --- 3. PANTALLA DE LOGIN ---
 if not st.session_state.autenticado:
-    st.markdown("<h2 style='text-align: center;'>🔐 Acceso CDCE RIBAS</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form("login_form"):
@@ -190,3 +190,4 @@ elif st.session_state.menu_actual == "Condicion":
                     st.markdown(f'<div class="st-card"><p style="color:red; font-weight:bold;">{r["Cond"]}</p><p>{r["Cargo"]}</p><h2>{r["Cant"]}</h2></div>', unsafe_allow_html=True)
         else:
             st.warning("⚠️ Sin registros de condición laboral.")
+
