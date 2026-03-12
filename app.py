@@ -1,8 +1,50 @@
 import streamlit as st
 from supabase import create_client
+# --- 1. INICIALIZAR ESTADO DE SESIÓN ---
+if 'autenticado' not in st.session_state:
+    st.session_state.autenticado = False
+    st.session_state.usuario_id = None
+    st.session_state.escuelas_asignadas = [] # Lista de IDs de sus escuelas
+
+# --- 2. PANTALLA DE LOGIN ---
+if not st.session_state.autenticado:
+    st.markdown("<h2 style='text-align: center;'>🔐 Sistema de Gestión CDCE RIBAS</h2>", unsafe_allow_html=True)
+    
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.form("login_form"):
+                u_ingresado = st.number_input("Cédula de Identidad:", step=1, value=0)
+                p_ingresada = st.text_input("Contraseña:", type="password")
+                
+                if st.form_submit_button("Ingresar"):
+                    # Buscamos al usuario por su cédula
+                    res_user = supabase.table("usuarios").select("id, password").eq("usuario", u_ingresado).execute()
+                    
+                    if res_user.data and res_user.data[0]['password'] == p_ingresada:
+                        u_uuid = res_user.data[0]['id']
+                        
+                        # Buscamos qué escuelas tiene asignadas este usuario
+                        res_permisos = supabase.table("usuario_escuelas").select("escuela_id").eq("usuario_id", u_uuid).execute()
+                        
+                        st.session_state.autenticado = True
+                        st.session_state.usuario_id = u_uuid
+                        # Guardamos solo la lista de IDs de sus escuelas
+                        st.session_state.escuelas_asignadas = [p['escuela_id'] for p in res_permisos.data]
+                        
+                        st.success("✅ Acceso correcto")
+                        st.rerun()
+                    else:
+                        st.error("❌ Cédula o contraseña incorrecta")
+    st.stop() # Bloquea el resto de la app si no hay login
+
+# --- 3. FILTRADO DE DATOS SEGÚN EL USUARIO ---
+# Ahora, en tus selectbox de escuelas, filtraremos usando st.session_state.escuelas_asignadas
+df_esc_autorizadas = df_esc[df_esc['id'].isin(st.session_state.escuelas_asignadas)]
 import pandas as pd
 import plotly.express as px
 import os
+
 
 # --- 1. CONFIGURACIÓN Y BLINDAJE ---
 st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
@@ -426,3 +468,4 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
