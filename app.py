@@ -220,3 +220,4 @@ elif st.session_state.menu_actual == "Condicion":
                     st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
         else:
             st.warning("Sin datos de condición laboral.")                    
+
