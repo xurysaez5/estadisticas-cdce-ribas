@@ -51,7 +51,7 @@ if not st.session_state.autenticado:
                     except Exception as e:
                         st.error(f"Error de conexión: {e}")
                 else:
-                    st.warning("⚠️ Ingrese solo números en la cédula.")
+                    st.warning("⚠️ Ingrese solo números.")
     st.stop()
 
 # --- 4. ESTILO CSS ---
@@ -145,7 +145,6 @@ elif st.session_state.menu_actual == "Por Institución":
         d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
         
         if not d.empty:
-            # --- NUEVOS KPIs ---
             total_m = d['total_matricula'].sum()
             fecha_c = pd.to_datetime(d['created_at'].iloc[0]).strftime('%d/%m/%Y')
             
@@ -158,7 +157,7 @@ elif st.session_state.menu_actual == "Por Institución":
                          color_discrete_sequence=px.colors.qualitative.Safe)
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.warning("⚠️ Sin datos para este mes.")
+            st.warning("⚠️ Sin datos registrados.")
 
 elif st.session_state.menu_actual == "Docentes":
     st.markdown("<h2 style='text-align: center;'>Personal Docente</h2>", unsafe_allow_html=True)
@@ -171,16 +170,20 @@ elif st.session_state.menu_actual == "Docentes":
             total_d = d['hembras_contratadas'].sum() + d['varones_contratados'].sum()
             st.markdown(f'<div class="st-card" style="width:300px; margin:auto;"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
             
-            # Gráfico de barras separadas por nivel y género (Colores Cálidos)
+            # --- CORRECCIÓN: Datos derretidos para forzar columnas agrupadas por nivel ---
             df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['hembras_contratadas', 'varones_contratados'], 
                              var_name='Género', value_name='Cantidad')
             
+            # barmode='group' asegura que Maternal y Preescolar tengan sus propias barras separadas
             fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", 
                          barmode="group", text_auto=True, title=f"Docentes por Nivel: {inst}",
-                         color_discrete_sequence=['#FF5733', '#FFC300']) # Naranja y Amarillo
+                         color_discrete_sequence=['#FF5733', '#FFC300']) 
+            
+            # Ajuste extra para asegurar que las etiquetas de nivel no se encimen
+            fig.update_layout(xaxis_title="Nivel Educativo", yaxis_title="Cantidad de Docentes")
             st.plotly_chart(fig, use_container_width=True, config=config_graf)
         else:
-            st.info("No hay registros.")
+            st.info("No hay registros de docentes para este mes.")
 
 elif st.session_state.menu_actual == "No Docentes":
     st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
@@ -194,7 +197,6 @@ elif st.session_state.menu_actual == "No Docentes":
             df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['hembras_contratadas', 'varones_contratados'],
                                 var_name='Género', value_name='Cantidad')
             
-            # Colores Verdes para No Docentes
             fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", 
                          barmode="group", text_auto=True, title=f"Personal de Apoyo: {inst}",
                          color_discrete_sequence=['#27AE60', '#ABEBC6'])
@@ -217,4 +219,4 @@ elif st.session_state.menu_actual == "Condicion":
                 with cols[i % 3]:
                     st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold;">{r["Condición"]}</p><p>{r["Cargo"]}</p><h3>{r["Cantidad"]}</h3></div>', unsafe_allow_html=True)
         else:
-            st.warning("Sin datos de condición laboral.")
+            st.warning("Sin datos de condición laboral.")                    
