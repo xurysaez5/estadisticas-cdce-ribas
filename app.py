@@ -1,5 +1,9 @@
 import streamlit as st
 from supabase import create_client
+import pandas as pd
+import plotly.express as px
+import os
+
 # --- 1. INICIALIZAR ESTADO DE SESIÓN ---
 if 'autenticado' not in st.session_state:
     st.session_state.autenticado = False
@@ -41,10 +45,6 @@ if not st.session_state.autenticado:
 # --- 3. FILTRADO DE DATOS SEGÚN EL USUARIO ---
 # Ahora, en tus selectbox de escuelas, filtraremos usando st.session_state.escuelas_asignadas
 df_esc_autorizadas = df_esc[df_esc['id'].isin(st.session_state.escuelas_asignadas)]
-import pandas as pd
-import plotly.express as px
-import os
-
 
 # --- 1. CONFIGURACIÓN Y BLINDAJE ---
 st.set_page_config(page_title="Estadísticas CDCE RIBAS", layout="wide")
@@ -468,4 +468,5 @@ elif st.session_state.menu_actual == "Condicion":
         else:
 
             st.warning("⚠️ No se encontraron registros en la tabla 'condicion_laboral' para esta institución.")
+
 
