@@ -27,13 +27,23 @@ if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Acceso CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        with st.form("login_form"):
-            u_ingresado = st.number_input("Cédula de Identidad:", step=1, value=0)
-            p_ingresada = st.text_input("Contraseña:", type="password")
-            if st.form_submit_button("Ingresar", use_container_width=True):
-                try:
-                    res_user = supabase.table("usuarios").select("id, password").eq("usuario", u_ingresado).execute()
-                    if res_user.data and res_user.data[0]['password'] == p_ingresada:
+        # --- CAMBIO EN EL FORMULARIO DE LOGIN ---
+with st.form("login_form"):
+    # Cambiamos number_input por text_input para eliminar los símbolos + y -
+    u_ingresado = st.text_input("Cédula de Identidad (solo números):", value="")
+    p_ingresada = st.text_input("Contraseña:", type="password")
+    
+    if st.form_submit_button("Ingresar", use_container_width=True):
+        # Validamos que solo contenga números antes de consultar la base de datos
+        if not u_ingresado.isdigit():
+            st.error("❌ Por favor, introduzca una cédula válida (solo números, sin puntos ni letras).")
+        else:
+            # El resto del código de autenticación sigue igual...
+            try:
+                # Convertimos a entero solo para la consulta si tu base de datos lo requiere
+                cedula_int = int(u_ingresado)
+                res_user = supabase.table("usuarios").select("id, password").eq("usuario", cedula_int).execute()
+                # ... (continuación del login)
                         u_uuid = res_user.data[0]['id']
                         res_permisos = supabase.table("usuario_escuelas").select("escuela_id").eq("usuario_id", u_uuid).execute()
                         st.session_state.autenticado = True
@@ -189,3 +199,4 @@ elif st.session_state.menu_actual == "Condicion":
                     st.markdown(f'<div class="st-card"><p style="color:red; font-weight:bold;">{r["Cond"]}</p><p>{r["Cargo"]}</p><h2>{r["Cant"]}</h2></div>', unsafe_allow_html=True)
         else:
             st.warning("⚠️ Sin registros de condición laboral.")
+
