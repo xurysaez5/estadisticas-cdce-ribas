@@ -107,6 +107,9 @@ with st.sidebar:
     if st.button("🛠️ ADMINISTRATIVOS / OBREROS", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
     if st.button("📜 CONDICIÓN LABORAL", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
     st.write("---")
+    st.write("**CARGA DE DATOS**")
+    if st.button("📝 CARGAR MATRÍCULA", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
+    st.write("---")
     if st.button("Cerrar Sesión", type="primary", use_container_width=True):
         for key in list(st.session_state.keys()): del st.session_state[key]
         st.rerun()
@@ -128,7 +131,7 @@ if st.session_state.menu_actual == "Inicio":
         if st.button("👩‍🏫 Docentes", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
     with c_nav2:
         if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
-        if st.button("📜 Condición", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
+        if st.button("📝 Cargar Datos", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
     st.write("---")
     
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
@@ -155,8 +158,53 @@ else:
     if st.button("⬅️ Volver al Menú Principal"):
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
+    # --- NUEVO: MÓDULO CARGAR DATOS ---
+    if st.session_state.menu_actual == "Cargar Datos":
+        st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst_nombres = sorted(df_esc['nombre_actual'].tolist())
+            inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
+            id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
+            
+            with st.form("form_carga_est", clear_on_submit=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    nivel = st.selectbox("Nivel Educativo:", ["Inicial", "Primaria", "Media General", "Especial"])
+                    grupo = st.text_input("Grado / Sección / Grupo:", placeholder="Ej: 1er Grado A")
+                    mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido))
+                with col2:
+                    v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
+                    h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
+                    v_asist = st.number_input("Asistencia Promedio Varones:", min_value=0, step=1)
+                    h_asist = st.number_input("Asistencia Promedio Hembras:", min_value=0, step=1)
+
+                enviar = st.form_submit_button("🚀 GUARDAR REGISTRO", use_container_width=True)
+                
+                if enviar:
+                    if (v_asist > v_ins) or (h_asist > h_ins):
+                        st.error("❌ Error: La asistencia no puede ser mayor a la matrícula.")
+                    elif (v_ins + h_ins) == 0:
+                        st.warning("⚠️ Ingrese al menos un alumno.")
+                    else:
+                        total_m = v_ins + h_ins
+                        prom_r = ((v_asist + h_asist) / total_m * 100) if total_m > 0 else 0
+                        
+                        nuevo_reg = {
+                            "escuela_id": int(id_escuela), "nivel_educativo": nivel,
+                            "detalle_grupo": grupo, "varones": v_ins, "hembras": h_ins,
+                            "total_matricula": total_m, "asistencia_varones": v_asist,
+                            "asistencia_hembras": h_asist, "asistencia_promedio_real": round(prom_r, 2),
+                            "mes_carga": mes_c, "ano_escolar": "2023-2024"
+                        }
+                        try:
+                            supabase.table("estudiantes").insert(nuevo_reg).execute()
+                            st.success(f"✅ ¡Registro de {grupo} guardado!")
+                            st.cache_data.clear()
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+
     # --- MÓDULO POR INSTITUCIÓN ---
-    if st.session_state.menu_actual == "Por Institución":
+    elif st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
@@ -165,7 +213,6 @@ else:
             
             if not d.empty:
                 total_m = d['total_matricula'].sum()
-                # Suma real de asistencia por género para evitar >100%
                 total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
                 porc_a = (total_asist_real / total_m * 100) if total_m > 0 else 0
                 
@@ -179,20 +226,15 @@ else:
             else:
                 st.warning("⚠️ Sin datos registrados para este mes.")
 
-# --- MÓDULO DOCENTES ---
+    # --- MÓDULO DOCENTES ---
     elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
-            
-            # Filtro por Institución, Tipo y Mes
-            d = df_per[(df_per['escuela_id'] == id_i) & 
-                       (df_per['tipo_personal'] == "Docente") & 
-                       (df_per['mes_carga'] == mes_elegido)]
+            d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] == "Docente") & (df_per['mes_carga'] == mes_elegido)]
             
             if not d.empty:
-                # Cálculos de Matrícula y Asistencia
                 total_contratado = d['varones_contratados'].sum() + d['hembras_contratadas'].sum()
                 total_asist_doc = d['asistencia_v'].sum() + d['asistencia_h'].sum()
                 porc_doc = (total_asist_doc / total_contratado * 100) if total_contratado > 0 else 0
@@ -204,24 +246,17 @@ else:
                 
                 df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['asistencia_v', 'asistencia_h'], var_name='Género', value_name='Asistencia')
                 df_plot['Género'] = df_plot['Género'].replace({'asistencia_h': 'Hembras', 'asistencia_v': 'Varones'})
-                
-                fig = px.bar(df_plot, x="nivel_educativo", y="Asistencia", color="Género", barmode="group", text_auto=True, 
-                             title=f"Asistencia Docente por Nivel ({mes_elegido})", color_discrete_sequence=['#FF5733', '#FFC300']) 
+                fig = px.bar(df_plot, x="nivel_educativo", y="Asistencia", color="Género", barmode="group", text_auto=True, title=f"Asistencia Docente", color_discrete_sequence=['#FF5733', '#FFC300']) 
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else: 
-                st.info(f"ℹ️ No hay registros de asistencia docente para {mes_elegido}.")
+            else: st.info(f"ℹ️ Sin registros.")
 
-    # --- MÓDULO ADMINISTRATIVOS / OBREROS ---
+    # --- MÓDULO NO DOCENTES ---
     elif st.session_state.menu_actual == "No Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal de Apoyo</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
-            
-            # Filtro por Institución, No Docentes y Mes
-            d = df_per[(df_per['escuela_id'] == id_i) & 
-                       (df_per['tipo_personal'] != "Docente") & 
-                       (df_per['mes_carga'] == mes_elegido)]
+            d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] != "Docente") & (df_per['mes_carga'] == mes_elegido)]
             
             if not d.empty:
                 total_contratado = d['varones_contratados'].sum() + d['hembras_contratadas'].sum()
@@ -236,19 +271,16 @@ else:
                 df_g = d.groupby('tipo_personal')[['asistencia_v', 'asistencia_h']].sum().reset_index()
                 df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['asistencia_h', 'asistencia_v'], var_name='Género', value_name='Cantidad')
                 df_plot['Género'] = df_plot['Género'].replace({'asistencia_h': 'Hembras', 'asistencia_v': 'Varones'})
-                
-                fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", barmode="group", text_auto=True, 
-                             title=f"Asistencia por Categoría ({mes_elegido})", color_discrete_sequence=['#27AE60', '#ABEBC6'])
+                fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", barmode="group", text_auto=True, title=f"Asistencia por Categoría", color_discrete_sequence=['#27AE60', '#ABEBC6'])
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else: 
-                st.info(f"ℹ️ No hay registros de personal de apoyo para {mes_elegido}.")
+            else: st.info(f"ℹ️ Sin registros.")
+
     # --- MÓDULO CONDICIÓN ---
     elif st.session_state.menu_actual == "Condicion":
         st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
-            # Quitamos cualquier filtro de mes para esta tabla
             d = df_con[df_con['escuela_id'] == id_i].copy()
             if not d.empty:
                 d['Cargo'] = d['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
@@ -258,4 +290,4 @@ else:
                 for i, r in res.iterrows():
                     with cols[i % 3]: 
                         st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold; margin:0;">{r["Condición"]}</p><p style="font-size:0.8rem; margin:0;">{r["Cargo"]}</p><h3>{int(r["Cantidad"])}</h3></div>', unsafe_allow_html=True)
-            else: st.warning("⚠️ Sin datos de condición laboral registrados.")
+            else: st.warning("⚠️ Sin datos registrados.")
