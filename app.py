@@ -164,13 +164,14 @@ else:
             d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
             
             if not d.empty:
+                # CORRECCIÓN DE COLUMNAS SEGÚN TU ESTRUCTURA
                 total_m = d['total_matricula'].sum()
-                total_p = d['estudiantes_presentes'].sum() if 'estudiantes_presentes' in d.columns else 0
+                total_p = d['asistencia_promedio_real'].sum()
                 porc_a = (total_p / total_m * 100) if total_m > 0 else 0
                 
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
-                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA</p><p class="val-kpi">{int(total_p)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA PROMEDIO</p><p class="val-kpi">{int(total_p)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
                 
                 fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil", color_discrete_sequence=px.colors.qualitative.Safe)
