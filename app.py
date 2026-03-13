@@ -103,4 +103,92 @@ with st.sidebar:
     if st.button("🏠 INICIO", use_container_width=True): st.session_state.menu_actual = "Inicio"; st.rerun()
     if st.button("🏫 INSTITUCIÓN", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
     st.write("**GESTIÓN DE PERSONAL**")
-    if st.button("👩‍🏫 DOCENTES", use_container_width=True): st.session_
+    if st.button("👩‍🏫 DOCENTES", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
+    if st.button("🛠️ ADMINISTRATIVOS / OBREROS", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+    if st.button("📜 CONDICIÓN LABORAL", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
+    st.write("---")
+    if st.button("Cerrar Sesión", type="primary", use_container_width=True):
+        for key in list(st.session_state.keys()): del st.session_state[key]
+        st.rerun()
+
+# --- 7. LÓGICA DE PERIODO ---
+meses_lista = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+col_v, col_m = st.columns([3, 1])
+with col_m:
+    mes_elegido = st.selectbox("Mes de Auditoría:", meses_lista)
+    st.session_state.mes_global = mes_elegido
+
+# --- 8. MÓDULOS ---
+
+if st.session_state.menu_actual == "Inicio":
+    st.markdown("<h2 style='text-align: center;'>Menú Principal</h2>", unsafe_allow_html=True)
+    c_nav1, c_nav2 = st.columns(2)
+    with c_nav1:
+        if st.button("🏫 Institución", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
+        if st.button("👩‍🏫 Docentes", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
+    with c_nav2:
+        if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+        if st.button("📜 Condición", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
+    st.write("---")
+    
+    df_mes = df_est[df_est['mes_carga'] == mes_elegido]
+    total_e = len(df_esc)
+    cargadas = df_mes[df_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
+    
+    c1, c2, c3 = st.columns(3)
+    with c1: st.markdown(f'<div class="st-card"><p>Total Escuelas</p><p class="val-kpi">{total_e}</p></div>', unsafe_allow_html=True)
+    with c2: st.markdown(f'<div class="st-card"><p>Con Carga</p><p class="val-kpi">{cargadas}</p></div>', unsafe_allow_html=True)
+    with c3: st.markdown(f'<div class="st-card"><p style="color:red">Pendientes</p><p class="val-kpi" style="color:red">{total_e-cargadas}</p></div>', unsafe_allow_html=True)
+
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        if not df_mes.empty:
+            df_g = df_mes.groupby('nivel_educativo')['total_matricula'].sum().reset_index()
+            fig_i = px.pie(df_g, values='total_matricula', names='nivel_educativo', title="Matrícula por Nivel", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+            st.plotly_chart(fig_i, use_container_width=True, config=config_graf)
+    with col_g2:
+        data_pie = pd.DataFrame({"Estado": ["Cargadas", "Pendientes"], "Cantidad": [cargadas, total_e-cargadas]})
+        fig_p = px.pie(data_pie, values='Cantidad', names='Estado', title="Progreso de Carga", color_discrete_sequence=['#2ECC71', '#E74C3C'])
+        st.plotly_chart(fig_p, use_container_width=True, config=config_graf)
+
+else:
+    if st.button("⬅️ Volver al Menú Principal"):
+        st.session_state.menu_actual = "Inicio"; st.rerun()
+
+    # --- MÓDULO POR INSTITUCIÓN (CORRECCIÓN SEGURA) ---
+    if st.session_state.menu_actual == "Por Institución":
+        st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
+            id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
+            d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
+            
+            if not d.empty:
+                total_m = d['total_matricula'].sum()
+                
+                # VERIFICACIÓN DE SEGURIDAD PARA EVITAR PANTALLA EN BLANCO
+                # Intentamos sumar por género, si no existen las columnas, usamos el promedio
+                if 'asistencia_varones' in d.columns and 'asistencia_hembras' in d.columns:
+                    total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
+                else:
+                    # Si no existen las columnas, usamos la columna de promedio pero sin sumar promedios
+                    # Calculamos el promedio ponderado o simple para no superar el 100%
+                    total_asist_real = d['asistencia_promedio_real'].mean() * (total_m / (total_m / len(d)) if len(d) > 0 else 0)
+                    # Simplificado para evitar errores:
+                    total_asist_real = d['asistencia_promedio_real'].sum() / len(d) if len(d) > 0 else 0
+                    # Pero lo más seguro para el KPI es:
+                    total_asist_real = (d['asistencia_promedio_real'].mean() * total_m) / d['total_matricula'].mean() if not d['total_matricula'].empty else 0
+
+                # Recalcular porcentaje para que sea lógico (Max 100%)
+                porc_a = (total_asist_real / total_m * 100) if total_m > 0 else 0
+                if porc_a > 100: porc_a = 100.0  # Techo lógico
+                
+                k1, k2, k3 = st.columns(3)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA TOTAL</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA ESTIMADA</p><p class="val-kpi">{int(total_asist_real)}</p></div>', unsafe_allow_html=True)
+                with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
+                
+                fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil", color_discrete_sequence=px.colors.qualitative.Safe)
+                st.plotly_chart(fig, use_container_width=True, config=config_graf)
+            else:
+                st.warning("⚠️ Sin datos registrados para este mes.")
