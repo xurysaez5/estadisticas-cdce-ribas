@@ -242,3 +242,20 @@ else:
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else: 
                 st.info(f"ℹ️ No hay registros de personal de apoyo para {mes_elegido}.")
+    # --- MÓDULO CONDICIÓN ---
+    elif st.session_state.menu_actual == "Condicion":
+        st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
+            id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
+            # Quitamos cualquier filtro de mes para esta tabla
+            d = df_con[df_con['escuela_id'] == id_i].copy()
+            if not d.empty:
+                d['Cargo'] = d['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
+                d['Condición'] = d['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
+                res = d.groupby(['Condición', 'Cargo']).size().reset_index(name='Cantidad')
+                cols = st.columns(3)
+                for i, r in res.iterrows():
+                    with cols[i % 3]: 
+                        st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold; margin:0;">{r["Condición"]}</p><p style="font-size:0.8rem; margin:0;">{r["Cargo"]}</p><h3>{int(r["Cantidad"])}</h3></div>', unsafe_allow_html=True)
+            else: st.warning("⚠️ Sin datos de condición laboral registrados.")
