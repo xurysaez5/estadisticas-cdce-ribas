@@ -155,7 +155,7 @@ else:
     if st.button("⬅️ Volver al Menú Principal"):
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
-    # --- MÓDULO POR INSTITUCIÓN (CORRECCIÓN SEGURA) ---
+    # --- MÓDULO POR INSTITUCIÓN ---
     if st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -165,30 +165,86 @@ else:
             
             if not d.empty:
                 total_m = d['total_matricula'].sum()
-                
-                # VERIFICACIÓN DE SEGURIDAD PARA EVITAR PANTALLA EN BLANCO
-                # Intentamos sumar por género, si no existen las columnas, usamos el promedio
-                if 'asistencia_varones' in d.columns and 'asistencia_hembras' in d.columns:
-                    total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
-                else:
-                    # Si no existen las columnas, usamos la columna de promedio pero sin sumar promedios
-                    # Calculamos el promedio ponderado o simple para no superar el 100%
-                    total_asist_real = d['asistencia_promedio_real'].mean() * (total_m / (total_m / len(d)) if len(d) > 0 else 0)
-                    # Simplificado para evitar errores:
-                    total_asist_real = d['asistencia_promedio_real'].sum() / len(d) if len(d) > 0 else 0
-                    # Pero lo más seguro para el KPI es:
-                    total_asist_real = (d['asistencia_promedio_real'].mean() * total_m) / d['total_matricula'].mean() if not d['total_matricula'].empty else 0
-
-                # Recalcular porcentaje para que sea lógico (Max 100%)
+                # Suma real de asistencia por género para evitar >100%
+                total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
                 porc_a = (total_asist_real / total_m * 100) if total_m > 0 else 0
-                if porc_a > 100: porc_a = 100.0  # Techo lógico
                 
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA TOTAL</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
-                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA ESTIMADA</p><p class="val-kpi">{int(total_asist_real)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA REAL</p><p class="val-kpi">{int(total_asist_real)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
                 
                 fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil", color_discrete_sequence=px.colors.qualitative.Safe)
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else:
                 st.warning("⚠️ Sin datos registrados para este mes.")
+
+    # --- MÓDULO DOCENTES ---
+    elif st.session_state.menu_actual == "Docentes":
+        st.markdown("<h2 style='text-align: center;'>Personal Docente</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
+            id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
+            # Nota: El personal usualmente no se filtra por mes si es carga única, 
+            # pero si lo tienes por mes en 'personal', deja la condición.
+            d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] == "Docente")]
+            
+            if not d.empty:
+                # Detección dinámica de columnas para evitar errores
+                h_col = 'hembras_contratadas' if 'hembras_contratadas' in d.columns else 'hembras'
+                v_col = 'varones_contratados' if 'varones_contratados' in d.columns else 'varones'
+                
+                total_d = d[h_col].sum() + d[v_col].sum()
+                
+                k1, k2 = st.columns(2)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL DOCENTES</p><p class="val-kpi">{int(total_d)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ESTADO</p><p class="val-kpi">Activos</p></div>', unsafe_allow_html=True)
+                
+                df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=[h_col, v_col], var_name='Género', value_name='Cantidad')
+                df_plot['Género'] = df_plot['Género'].replace({h_col: 'Hembras', v_col: 'Varones'})
+                fig = px.bar(df_plot, x="nivel_educativo", y="Cantidad", color="Género", barmode="group", text_auto=True, title=f"Carga Docente por Nivel", color_discrete_sequence=['#FF5733', '#FFC300']) 
+                st.plotly_chart(fig, use_container_width=True, config=config_graf)
+            else: st.info("ℹ️ No hay registros de docentes.")
+
+    # --- MÓDULO ADMINISTRATIVOS / OBREROS ---
+    elif st.session_state.menu_actual == "No Docentes":
+        st.markdown("<h2 style='text-align: center;'>Personal Administrativo y Obrero</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
+            id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
+            d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] != "Docente")]
+            
+            if not d.empty:
+                h_col = 'hembras_contratadas' if 'hembras_contratadas' in d.columns else 'hembras'
+                v_col = 'varones_contratados' if 'varones_contratados' in d.columns else 'varones'
+                
+                total_ad = d[h_col].sum() + d[v_col].sum()
+                
+                k1, k2 = st.columns(2)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL PERSONAL</p><p class="val-kpi">{int(total_ad)}</p></div>', unsafe_allow_html=True)
+                with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">CATEGORÍAS</p><p class="val-kpi">{d["tipo_personal"].nunique()}</p></div>', unsafe_allow_html=True)
+                
+                df_g = d.groupby('tipo_personal')[[v_col, h_col]].sum().reset_index()
+                df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=[h_col, v_col], var_name='Género', value_name='Cantidad')
+                df_plot['Género'] = df_plot['Género'].replace({h_col: 'Hembras', v_col: 'Varones'})
+                fig = px.bar(df_plot, x="tipo_personal", y="Cantidad", color="Género", barmode="group", text_auto=True, title=f"Distribución Personal de Apoyo", color_discrete_sequence=['#27AE60', '#ABEBC6'])
+                st.plotly_chart(fig, use_container_width=True, config=config_graf)
+            else: st.info("ℹ️ No hay registros de personal administrativo u obrero.")
+
+    # --- MÓDULO CONDICIÓN ---
+    elif st.session_state.menu_actual == "Condicion":
+        st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
+            inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
+            id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
+            # Quitamos cualquier filtro de mes para esta tabla
+            d = df_con[df_con['escuela_id'] == id_i].copy()
+            if not d.empty:
+                d['Cargo'] = d['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
+                d['Condición'] = d['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
+                res = d.groupby(['Condición', 'Cargo']).size().reset_index(name='Cantidad')
+                cols = st.columns(3)
+                for i, r in res.iterrows():
+                    with cols[i % 3]: 
+                        st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold; margin:0;">{r["Condición"]}</p><p style="font-size:0.8rem; margin:0;">{r["Cargo"]}</p><h3>{int(r["Cantidad"])}</h3></div>', unsafe_allow_html=True)
+            else: st.warning("⚠️ Sin datos de condición laboral registrados.")
