@@ -238,24 +238,33 @@ else:
                         except Exception as e:
                             st.error(f"Error al conectar con la base de datos: {e}")
     # --- Bloque Por Institución ---
-    elif st.session_state.menu_actual == "Por Institución":
+elif st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
-            d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
+            
+            # FILTRO CRÍTICO: Aseguramos filtrar por ID de escuela Y por el Mes elegido
+            d = df_est[(df_est['escuela_id'] == int(id_i)) & (df_est['mes_carga'] == mes_elegido)].copy()
+            
             if not d.empty:
+                # Si hay duplicados accidentales en la BD, esto los limpia antes de sumar
+                d = d.drop_duplicates(subset=['nivel_educativo', 'detalle_grupo', 'mes_carga', 'escuela_id'])
+
                 total_m = d['total_matricula'].sum()
                 total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
                 porc_a = (total_asist_real / total_m * 100) if total_m > 0 else 0
+                
+                # KPIs
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA TOTAL</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
                 with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA REAL</p><p class="val-kpi">{int(total_asist_real)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
-                fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil")
+                
+                fig = px.bar(d, x='detalle_grupo', y='total_matricula', color='nivel_educativo', barmode='group', text_auto=True, title=f"Distribución por Grado/Año")
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else: st.warning("⚠️ Sin datos registrados.")
-
+            else: 
+                st.warning(f"⚠️ Sin datos registrados para {inst} en el mes de {mes_elegido}.")
     # --- Bloque Docentes ---
     elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal Docente</h2>", unsafe_allow_html=True)
