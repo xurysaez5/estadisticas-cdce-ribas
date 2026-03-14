@@ -189,7 +189,7 @@ else:
             opciones_grados = {
                 "Inicial": [
                     "Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)",
-                    "1er Grupo (3 a 4 años)", "2do Grupo (4 a 5 años)", "3er Grupo (5 a 6 años)"
+                    "Preescolar (3 a 4 años)", "Preescolar (4 a 5 años)", "Preescolar (5 a 6 años)"
                 ],
                 "Primaria": [
                     "1er Grado", "2do Grado", "3er Grado", 
