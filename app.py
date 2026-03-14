@@ -177,6 +177,7 @@ else:
     if st.button("⬅️ Volver al Menú Principal"):
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
+# --- NUEVO: MÓDULO CARGAR DATOS (CON GRADOS DINÁMICOS) ---
     if st.session_state.menu_actual == "Cargar Datos":
         st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -184,11 +185,32 @@ else:
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
+            # Diccionario de opciones según el nivel
+            opciones_grados = {
+                "Inicial": [
+                    "Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)",
+                    "1er Grupo (3 a 4 años)", "2do Grupo (4 a 5 años)", "3er Grupo (5 a 6 años)"
+                ],
+                "Primaria": [
+                    "1er Grado", "2do Grado", "3er Grado", 
+                    "4to Grado", "5to Grado", "6to Grado"
+                ],
+                "Media General": [
+                    "1er Año", "2do Año", "3er Año", 
+                    "4to Año", "5to Año", "6to Año"
+                ],
+                "Especial": ["Único"]
+            }
+            
             with st.form("form_carga_est", clear_on_submit=True):
                 col1, col2 = st.columns(2)
                 with col1:
-                    nivel = st.selectbox("Nivel Educativo:", ["Inicial", "Primaria", "Media General", "Especial"])
-                    grupo = st.text_input("Grado / Sección / Grupo:", placeholder="Ej: 1er Grado A")
+                    # El nivel educativo ahora controla la siguiente lista
+                    nivel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
+                    
+                    # DETALLE 2: Lista desplegable dinámica
+                    grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel])
+                    
                     mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido))
                 with col2:
                     v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
