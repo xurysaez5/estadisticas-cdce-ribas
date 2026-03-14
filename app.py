@@ -167,18 +167,21 @@ else:
     if st.button("⬅️ Volver al Menú Principal"):
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
-if st.session_state.menu_actual == "Cargar Datos":
+    # --- Bloque de Cargar Datos ---
+    if st.session_state.menu_actual == "Cargar Datos":
         st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
-        
-        # Informativo para el usuario
-        st.info(f"📅 Registrando datos para el mes de: **{mes_elegido}** (Si desea cambiar el mes, ajústelo en la parte superior derecha)")
+        st.info(f"📅 Registrando datos para el mes de: **{mes_elegido}**")
 
         if not df_esc.empty:
             inst_nombres = sorted(df_esc['nombre_actual'].tolist())
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
-            # ... (Diccionario de opciones_grados igual) ...
+            opciones_grados = {
+                "INICIAL": ["Etapa I", "Etapa II", "Etapa III"],
+                "PRIMARIA": ["1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado"],
+                "MEDIA GENERAL": ["1er Año", "2do Año", "3er Año", "4to Año", "5-6to Año"]
+            }
 
             nivel_sel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
             
@@ -186,8 +189,6 @@ if st.session_state.menu_actual == "Cargar Datos":
                 col1, col2 = st.columns(2)
                 with col1:
                     grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel_sel])
-                    # ELIMINAMOS EL SELECTBOX DE MES DE AQUÍ PARA LIMPIAR EL FORMULARIO
-                    
                 with col2:
                     v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
                     h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
@@ -197,8 +198,6 @@ if st.session_state.menu_actual == "Cargar Datos":
                 enviar = st.form_submit_button("🚀 GUARDAR REGISTRO", use_container_width=True)
                 
                 if enviar:
-                    # Usamos directamente 'mes_elegido' (el del selector superior)
-                    # Así el director no tiene que seleccionarlo dos veces.
                     nuevo_reg = {
                         "escuela_id": int(id_escuela), 
                         "nivel_educativo": nivel_sel,
@@ -209,20 +208,20 @@ if st.session_state.menu_actual == "Cargar Datos":
                         "asistencia_varones": v_asist,
                         "asistencia_hembras": h_asist, 
                         "asistencia_promedio_real": round(((v_asist + h_asist) / (v_ins + h_ins) * 100), 2) if (v_ins + h_ins) > 0 else 0,
-                        "mes_carga": mes_elegido, # <--- USAMOS EL GLOBAL
+                        "mes_carga": mes_elegido,
                         "ano_escolar": "2023-2024"
                     }
                     try:
-                            supabase.table("estudiantes").insert(nuevo_reg).execute()
-                            st.success(f"✅ ¡Registro de {grupo} guardado!")
-                            st.cache_data.clear()
+                        supabase.table("estudiantes").insert(nuevo_reg).execute()
+                        st.success(f"✅ ¡Registro de {grupo} guardado!")
+                        st.cache_data.clear()
                     except Exception as e:
-                            st.error(f"Error: {e}")
+                        st.error(f"Error: {e}")
 
-    # ... Resto de los módulos (Por Institución, Docentes, etc.) permanecen iguales ...
-elif st.session_state.menu_actual == "Por Institución":
-    st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
-    if not df_esc.empty:
+    # --- Bloque Por Institución ---
+    elif st.session_state.menu_actual == "Por Institución":
+        st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
+        if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
@@ -238,7 +237,8 @@ elif st.session_state.menu_actual == "Por Institución":
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else: st.warning("⚠️ Sin datos registrados.")
 
-elif st.session_state.menu_actual == "Docentes":
+    # --- Bloque Docentes ---
+    elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
@@ -258,6 +258,7 @@ elif st.session_state.menu_actual == "Docentes":
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else: st.info(f"ℹ️ Sin registros.")
 
+    # --- Bloque No Docentes ---
     elif st.session_state.menu_actual == "No Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal No Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -279,6 +280,7 @@ elif st.session_state.menu_actual == "Docentes":
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else: st.info(f"ℹ️ Sin registros.")
 
+    # --- Bloque Condicion ---
     elif st.session_state.menu_actual == "Condicion":
         st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
