@@ -125,11 +125,20 @@ with col_m:
 # --- 8. MÓDULOS ---
 
 if st.session_state.menu_actual == "Inicio":
-    # LOGO CENTRADO EN EL PANEL DERECHO
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 1.5, 1])
-    with col_logo2:
-        if os.path.exists("logo definitivo1.png"):
-            st.image("logo definitivo1.png", use_container_width=True)
+    # --- DETALLE 1.1 CORREGIDO: LOGO CENTRADO CON TAMAÑO CONTROLADO (COMO SIDEBAR) ---
+    if os.path.exists("logo definitivo1.png"):
+        # Usamos HTML para centrar y fijar el ancho a 150px (similar a un sidebar)
+        st.markdown(
+            """
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <img src="data:image/png;base64,{}" width="150">
+            </div>
+            """.format(
+                # Necesitamos convertir la imagen a base64 para insertarla en HTML
+                importlib.import_module("base64").b64encode(open("logo definitivo1.png", "rb").read()).decode()
+            ),
+            unsafe_allow_html=True
+        )
     
     st.markdown("<h2 style='text-align: center; color: #002D57;'>Menú Principal</h2>", unsafe_allow_html=True)
     
@@ -151,6 +160,7 @@ if st.session_state.menu_actual == "Inicio":
 
     st.write("---")
     
+    # KPIs Y GRÁFICOS (Se mantienen igual)
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
     total_e = len(df_esc)
     cargadas = df_mes[df_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
@@ -170,7 +180,6 @@ if st.session_state.menu_actual == "Inicio":
         data_pie = pd.DataFrame({"Estado": ["Cargadas", "Pendientes"], "Cantidad": [cargadas, total_e-cargadas]})
         fig_p = px.pie(data_pie, values='Cantidad', names='Estado', title="Progreso de Carga", color_discrete_sequence=['#2ECC71', '#E74C3C'])
         st.plotly_chart(fig_p, use_container_width=True, config=config_graf)
-
 else:
     # Botón de retorno para módulos que no sean Inicio
     if st.button("⬅️ Volver al Menú Principal"):
