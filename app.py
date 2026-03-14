@@ -222,8 +222,7 @@ else:
                             st.error(f"Error: {e}")
 
     elif st.session_state.menu_actual == "Por Institución":
-        # ... (resto de módulos permanecen igual)
-        pass        st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
