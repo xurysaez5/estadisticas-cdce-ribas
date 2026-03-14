@@ -200,8 +200,10 @@ else:
                 with col2:
                     v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
                     h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
-                    v_asist = st.number_input("Asistencia Promedio Varones:", min_value=0, step=1)
-                    h_asist = st.number_input("Asistencia Promedio Hembras:", min_value=0, step=1)
+                    
+                    # Cambiamos step=0.1 y añadimos format="%.2f" para permitir decimales
+                    v_asist = st.number_input("Asistencia Promedio Varones:", min_value=0.0, step=0.1, format="%.2f")
+                    h_asist = st.number_input("Asistencia Promedio Hembras:", min_value=0.0, step=0.1, format="%.2f")
 
                 enviar = st.form_submit_button("🚀 GUARDAR REGISTRO", use_container_width=True)
                 
