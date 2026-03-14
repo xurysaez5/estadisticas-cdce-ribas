@@ -105,11 +105,11 @@ with st.sidebar:
     if st.button("🏫 INSTITUCIÓN", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
     st.write("**GESTIÓN DE PERSONAL**")
     if st.button("👩‍🏫 DOCENTES", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
-    if st.button("🛠️ ADMINISTRATIVOS / OBREROS", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+    if st.button("🛠️ ADMIN/OBRE/COCI/VIGI", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
     if st.button("📜 CONDICIÓN LABORAL", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
     st.write("---")
     st.write("**CARGA DE DATOS**")
-    if st.button("📝 CARGAR MATRÍCULA", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
+    if st.button("📝 CARGAR DATOS", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
     st.write("---")
     if st.button("Cerrar Sesión", type="primary", use_container_width=True):
         for key in list(st.session_state.keys()): del st.session_state[key]
@@ -143,9 +143,9 @@ if st.session_state.menu_actual == "Inicio":
         if st.button("👩‍🏫 Docentes", use_container_width=True): 
             st.session_state.menu_actual = "Docentes"; st.rerun()
     with c_nav2:
-        if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): 
+        if st.button("🛠️ Adm/Obre/Coci/Vigi", use_container_width=True): 
             st.session_state.menu_actual = "No Docentes"; st.rerun()
-        if st.button("📜 Condición", use_container_width=True): 
+        if st.button("📜 Condición Laboral", use_container_width=True): 
             st.session_state.menu_actual = "Condicion"; st.rerun()
     with c_nav3:
         if st.button("📝 Cargar Datos", use_container_width=True): 
@@ -267,7 +267,7 @@ else:
             else: st.info(f"ℹ️ Sin registros.")
 
     elif st.session_state.menu_actual == "No Docentes":
-        st.markdown("<h2 style='text-align: center;'>Asistencia Personal de Apoyo</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Asistencia Personal No Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
