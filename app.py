@@ -168,27 +168,35 @@ else:
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
     # --- Bloque de Cargar Datos ---
+    # --- 8. MÓDULOS (Continuación) ---
+    
     if st.session_state.menu_actual == "Cargar Datos":
         st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
-        st.info(f"📅 Registrando datos para el mes de: **{mes_elegido}**")
-
+        
         if not df_esc.empty:
             inst_nombres = sorted(df_esc['nombre_actual'].tolist())
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
+            # Diccionario completo con Especial e Inicial detallado
             opciones_grados = {
-                "INICIAL": ["Etapa I", "Etapa II", "Etapa III"],
-                "PRIMARIA": ["1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado"],
-                "MEDIA GENERAL": ["1er Año", "2do Año", "3er Año", "4to Año", "5-6to Año"]
+                "Inicial": ["Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)", "Preescolar (3 a 4 años)", "Preescolar (4 a 5 años)", "Preescolar (5 a 6 años)"],
+                "Primaria": ["1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado"],
+                "Media General": ["1er Año", "2do Año", "3er Año", "4to Año", "5to Año", "6to Año"],
+                "Especial": ["Único"]
             }
 
+            # Nivel fuera del formulario para que el cambio sea instantáneo
             nivel_sel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
             
             with st.form("form_carga_est", clear_on_submit=True):
                 col1, col2 = st.columns(2)
                 with col1:
+                    # El grupo se adapta al nivel seleccionado arriba
                     grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel_sel])
+                    # Mantenemos el mes sugerido según el selector global
+                    mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido))
+                    
                 with col2:
                     v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
                     h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
@@ -198,26 +206,35 @@ else:
                 enviar = st.form_submit_button("🚀 GUARDAR REGISTRO", use_container_width=True)
                 
                 if enviar:
-                    nuevo_reg = {
-                        "escuela_id": int(id_escuela), 
-                        "nivel_educativo": nivel_sel,
-                        "detalle_grupo": grupo, 
-                        "varones": v_ins, 
-                        "hembras": h_ins,
-                        "total_matricula": v_ins + h_ins, 
-                        "asistencia_varones": v_asist,
-                        "asistencia_hembras": h_asist, 
-                        "asistencia_promedio_real": round(((v_asist + h_asist) / (v_ins + h_ins) * 100), 2) if (v_ins + h_ins) > 0 else 0,
-                        "mes_carga": mes_elegido,
-                        "ano_escolar": "2023-2024"
-                    }
-                    try:
-                        supabase.table("estudiantes").insert(nuevo_reg).execute()
-                        st.success(f"✅ ¡Registro de {grupo} guardado!")
-                        st.cache_data.clear()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-
+                    # Tus validaciones de seguridad
+                    if (v_asist > v_ins) or (h_asist > h_ins):
+                        st.error("❌ Error: La asistencia no puede ser mayor a la matrícula.")
+                    elif (v_ins + h_ins) == 0:
+                        st.warning("⚠️ Ingrese al menos un alumno.")
+                    else:
+                        total_m = v_ins + h_ins
+                        prom_r = ((v_asist + h_asist) / total_m * 100) if total_m > 0 else 0
+                        
+                        nuevo_reg = {
+                            "escuela_id": int(id_escuela), 
+                            "nivel_educativo": nivel_sel,
+                            "detalle_grupo": grupo, 
+                            "varones": v_ins, 
+                            "hembras": h_ins,
+                            "total_matricula": total_m, 
+                            "asistencia_varones": v_asist,
+                            "asistencia_hembras": h_asist, 
+                            "asistencia_promedio_real": round(prom_r, 2),
+                            "mes_carga": mes_c, 
+                            "ano_escolar": "2023-2024"
+                        }
+                        
+                        try:
+                            supabase.table("estudiantes").insert(nuevo_reg).execute()
+                            st.success(f"✅ ¡Registro de {grupo} guardado para {mes_c}!")
+                            st.cache_data.clear()
+                        except Exception as e:
+                            st.error(f"Error al conectar con la base de datos: {e}")
     # --- Bloque Por Institución ---
     elif st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
