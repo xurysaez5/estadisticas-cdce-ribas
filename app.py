@@ -1,3 +1,4 @@
+#14/03/2026
 import streamlit as st
 from supabase import create_client
 import pandas as pd
@@ -125,15 +126,27 @@ with col_m:
 
 if st.session_state.menu_actual == "Inicio":
     st.markdown("<h2 style='text-align: center;'>Menú Principal</h2>", unsafe_allow_html=True)
-    c_nav1, c_nav2 = st.columns(2)
+    
+    # ORGANIZACIÓN DE BOTONES EN EL PANEL DERECHO (CUERPO PRINCIPAL)
+    c_nav1, c_nav2, c_nav3 = st.columns(3)
     with c_nav1:
-        if st.button("🏫 Institución", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
-        if st.button("👩‍🏫 Docentes", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
+        if st.button("🏫 Institución", use_container_width=True): 
+            st.session_state.menu_actual = "Por Institución"; st.rerun()
+        if st.button("👩‍🏫 Docentes", use_container_width=True): 
+            st.session_state.menu_actual = "Docentes"; st.rerun()
     with c_nav2:
-        if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
-        if st.button("📝 Cargar Datos", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
+        if st.button("🛠️ Adm / Obreros / Coc", use_container_width=True): 
+            st.session_state.menu_actual = "No Docentes"; st.rerun()
+        if st.button("📜 Condición", use_container_width=True): 
+            st.session_state.menu_actual = "Condicion"; st.rerun()
+    with c_nav3:
+        # Botón de Carga resaltado para los directores
+        if st.button("📝 Cargar Datos", use_container_width=True): 
+            st.session_state.menu_actual = "Cargar Datos"; st.rerun()
+
     st.write("---")
     
+    # El resto del código de KPIs y Gráficos se mantiene igual...
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
     total_e = len(df_esc)
     cargadas = df_mes[df_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
