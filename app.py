@@ -1,4 +1,4 @@
-# 14/03/2026 - Versión Corregida CDCE RIBAS (Logo Optimizado)
+# 14/03/2026 - Versión Corregida CDCE RIBAS (Grados Dinámicos y Preescolar)
 import streamlit as st
 from supabase import create_client
 import pandas as pd
@@ -125,34 +125,24 @@ with col_m:
 # --- 8. MÓDULOS ---
 
 if st.session_state.menu_actual == "Inicio":
-    # --- LOGO CENTRADO Y PEQUEÑO ---
-    # Usamos 5 columnas para que la del centro sea bien estrecha
     l1, l2, l3, l4, l5 = st.columns([2, 1, 1.2, 1, 2])
     with l3:
         if os.path.exists("logo definitivo1.png"):
-            # Al NO usar container_width=True, mantiene su tamaño original o se ajusta a la columna pequeña
             st.image("logo definitivo1.png")
     
     st.markdown("<h2 style='text-align: center; color: #002D57;'>Menú Principal</h2>", unsafe_allow_html=True)
     
-    # ORGANIZACIÓN DE BOTONES EN EL PANEL DERECHO
     c_nav1, c_nav2, c_nav3 = st.columns(3)
     with c_nav1:
-        if st.button("🏫 Institución", use_container_width=True): 
-            st.session_state.menu_actual = "Por Institución"; st.rerun()
-        if st.button("👩‍🏫 Docentes", use_container_width=True): 
-            st.session_state.menu_actual = "Docentes"; st.rerun()
+        if st.button("🏫 Institución", use_container_width=True): st.session_state.menu_actual = "Por Institución"; st.rerun()
+        if st.button("👩‍🏫 Docentes", use_container_width=True): st.session_state.menu_actual = "Docentes"; st.rerun()
     with c_nav2:
-        if st.button("🛠️ Adm/Obre/Coci/Vigi", use_container_width=True): 
-            st.session_state.menu_actual = "No Docentes"; st.rerun()
-        if st.button("📜 Condición Laboral", use_container_width=True): 
-            st.session_state.menu_actual = "Condicion"; st.rerun()
+        if st.button("🛠️ Adm/Obre/Coci/Vigi", use_container_width=True): st.session_state.menu_actual = "No Docentes"; st.rerun()
+        if st.button("📜 Condición Laboral", use_container_width=True): st.session_state.menu_actual = "Condicion"; st.rerun()
     with c_nav3:
-        if st.button("📝 Cargar Datos", use_container_width=True): 
-            st.session_state.menu_actual = "Cargar Datos"; st.rerun()
+        if st.button("📝 Cargar Datos", use_container_width=True): st.session_state.menu_actual = "Cargar Datos"; st.rerun()
 
     st.write("---")
-    
     df_mes = df_est[df_est['mes_carga'] == mes_elegido]
     total_e = len(df_esc)
     cargadas = df_mes[df_mes['escuela_id'].isin(df_esc['id'])]['escuela_id'].nunique()
@@ -177,7 +167,6 @@ else:
     if st.button("⬅️ Volver al Menú Principal"):
         st.session_state.menu_actual = "Inicio"; st.rerun()
 
-# --- NUEVO: MÓDULO CARGAR DATOS (CON GRADOS DINÁMICOS) ---
     if st.session_state.menu_actual == "Cargar Datos":
         st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -185,32 +174,21 @@ else:
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
-            # Diccionario de opciones según el nivel
             opciones_grados = {
-                "Inicial": [
-                    "Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)",
-                    "Preescolar (3 a 4 años)", "Preescolar (4 a 5 años)", "Preescolar (5 a 6 años)"
-                ],
-                "Primaria": [
-                    "1er Grado", "2do Grado", "3er Grado", 
-                    "4to Grado", "5to Grado", "6to Grado"
-                ],
-                "Media General": [
-                    "1er Año", "2do Año", "3er Año", 
-                    "4to Año", "5to Año", "6to Año"
-                ],
+                "Inicial": ["Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)", "Preescolar (3 a 4 años)", "Preescolar (4 a 5 años)", "Preescolar (5 a 6 años)"],
+                "Primaria": ["1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado"],
+                "Media General": ["1er Año", "2do Año", "3er Año", "4to Año", "5to Año", "6to Año"],
                 "Especial": ["Único"]
             }
+
+            # --- CORRECCIÓN CLAVE: El nivel debe estar fuera del form para actualizar el siguiente selectbox ---
+            nivel_sel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
             
             with st.form("form_carga_est", clear_on_submit=True):
                 col1, col2 = st.columns(2)
                 with col1:
-                    # El nivel educativo ahora controla la siguiente lista
-                    nivel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
-                    
-                    # DETALLE 2: Lista desplegable dinámica
-                    grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel])
-                    
+                    # El grupo ahora toma las opciones según nivel_sel
+                    grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel_sel])
                     mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido))
                 with col2:
                     v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
@@ -228,9 +206,8 @@ else:
                     else:
                         total_m = v_ins + h_ins
                         prom_r = ((v_asist + h_asist) / total_m * 100) if total_m > 0 else 0
-                        
                         nuevo_reg = {
-                            "escuela_id": int(id_escuela), "nivel_educativo": nivel,
+                            "escuela_id": int(id_escuela), "nivel_educativo": nivel_sel,
                             "detalle_grupo": grupo, "varones": v_ins, "hembras": h_ins,
                             "total_matricula": total_m, "asistencia_varones": v_asist,
                             "asistencia_hembras": h_asist, "asistencia_promedio_real": round(prom_r, 2),
@@ -243,27 +220,24 @@ else:
                         except Exception as e:
                             st.error(f"Error: {e}")
 
+    # ... Resto de los módulos (Por Institución, Docentes, etc.) permanecen iguales ...
     elif st.session_state.menu_actual == "Por Institución":
         st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
-            
             if not d.empty:
                 total_m = d['total_matricula'].sum()
                 total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
                 porc_a = (total_asist_real / total_m * 100) if total_m > 0 else 0
-                
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">MATRÍCULA TOTAL</p><p class="val-kpi">{int(total_m)}</p></div>', unsafe_allow_html=True)
                 with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA REAL</p><p class="val-kpi">{int(total_asist_real)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
-                
                 fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil")
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-            else:
-                st.warning("⚠️ Sin datos registrados.")
+            else: st.warning("⚠️ Sin datos registrados.")
 
     elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal Docente</h2>", unsafe_allow_html=True)
@@ -271,17 +245,14 @@ else:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] == "Docente") & (df_per['mes_carga'] == mes_elegido)]
-            
             if not d.empty:
                 total_contratado = d['varones_contratados'].sum() + d['hembras_contratadas'].sum()
                 total_asist_doc = d['asistencia_v'].sum() + d['asistencia_h'].sum()
                 porc_doc = (total_asist_doc / total_contratado * 100) if total_contratado > 0 else 0
-                
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">DOCENTES CONTRATADOS</p><p class="val-kpi">{int(total_contratado)}</p></div>', unsafe_allow_html=True)
                 with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA PROMEDIO</p><p class="val-kpi">{int(total_asist_doc)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_doc:.1f}%</p></div>', unsafe_allow_html=True)
-                
                 df_plot = d.melt(id_vars=['nivel_educativo'], value_vars=['asistencia_v', 'asistencia_h'], var_name='Género', value_name='Asistencia')
                 df_plot['Género'] = df_plot['Género'].replace({'asistencia_h': 'Hembras', 'asistencia_v': 'Varones'})
                 fig = px.bar(df_plot, x="nivel_educativo", y="Asistencia", color="Género", barmode="group", text_auto=True, title=f"Asistencia Docente") 
@@ -294,17 +265,14 @@ else:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_per[(df_per['escuela_id'] == id_i) & (df_per['tipo_personal'] != "Docente") & (df_per['mes_carga'] == mes_elegido)]
-            
             if not d.empty:
                 total_contratado = d['varones_contratados'].sum() + d['hembras_contratadas'].sum()
                 total_asist_apoyo = d['asistencia_v'].sum() + d['asistencia_h'].sum()
                 porc_apoyo = (total_asist_apoyo / total_contratado * 100) if total_contratado > 0 else 0
-                
                 k1, k2, k3 = st.columns(3)
                 with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL PERSONAL APOYO</p><p class="val-kpi">{int(total_contratado)}</p></div>', unsafe_allow_html=True)
                 with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA PROMEDIO</p><p class="val-kpi">{int(total_asist_apoyo)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_apoyo:.1f}%</p></div>', unsafe_allow_html=True)
-                
                 df_g = d.groupby('tipo_personal')[['asistencia_v', 'asistencia_h']].sum().reset_index()
                 df_plot = df_g.melt(id_vars=['tipo_personal'], value_vars=['asistencia_h', 'asistencia_v'], var_name='Género', value_name='Cantidad')
                 df_plot['Género'] = df_plot['Género'].replace({'asistencia_h': 'Hembras', 'asistencia_v': 'Varones'})
