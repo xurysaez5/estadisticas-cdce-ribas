@@ -222,7 +222,7 @@ if st.session_state.menu_actual == "Cargar Datos":
     # ... Resto de los módulos (Por Institución, Docentes, etc.) permanecen iguales ...
 elif st.session_state.menu_actual == "Por Institución":
     st.markdown("<h2 style='text-align: center;'>Análisis por Institución</h2>", unsafe_allow_html=True)
-        if not df_esc.empty:
+    if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
             id_i = df_esc[df_esc['nombre_actual'] == inst]['id'].values[0]
             d = df_est[(df_est['escuela_id'] == id_i) & (df_est['mes_carga'] == mes_elegido)]
@@ -236,9 +236,9 @@ elif st.session_state.menu_actual == "Por Institución":
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_a:.1f}%</p></div>', unsafe_allow_html=True)
                 fig = px.bar(d, x='nivel_educativo', y='total_matricula', color='detalle_grupo', barmode='group', text_auto=True, title=f"Distribución Estudiantil")
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
-    else: st.warning("⚠️ Sin datos registrados.")
+            else: st.warning("⚠️ Sin datos registrados.")
 
-    elif st.session_state.menu_actual == "Docentes":
+elif st.session_state.menu_actual == "Docentes":
         st.markdown("<h2 style='text-align: center;'>Asistencia Personal Docente</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst = st.selectbox("Seleccione Institución:", sorted(df_esc['nombre_actual'].tolist()))
