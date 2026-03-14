@@ -125,6 +125,11 @@ with col_m:
 # --- 8. MÓDULOS ---
 
 if st.session_state.menu_actual == "Inicio":
+    # --- DETALLE 1.1: LOGO CENTRADO EN EL PANEL DERECHO ---
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+    with col_logo2:
+        if os.path.exists("logo definitivo1.png"):
+            st.image("logo definitivo1.png", use_container_width=True)
     st.markdown("<h2 style='text-align: center;'>Menú Principal</h2>", unsafe_allow_html=True)
     
     # ORGANIZACIÓN DE BOTONES EN EL PANEL DERECHO (CUERPO PRINCIPAL)
