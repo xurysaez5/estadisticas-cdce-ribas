@@ -216,7 +216,7 @@ if st.session_state.menu_actual == "Cargar Datos":
                             supabase.table("estudiantes").insert(nuevo_reg).execute()
                             st.success(f"✅ ¡Registro de {grupo} guardado!")
                             st.cache_data.clear()
-                        except Exception as e:
+                    except Exception as e:
                             st.error(f"Error: {e}")
 
     # ... Resto de los módulos (Por Institución, Docentes, etc.) permanecen iguales ...
