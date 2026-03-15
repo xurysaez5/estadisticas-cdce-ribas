@@ -1,4 +1,4 @@
-# 14/03/2026 - Versión Corregida CDCE RIBAS (Grados Dinámicos y Preescolar)
+# 15/03/2026 - Versión Corregida CDCE RIBAS (Grados Dinámicos y Preescolar)
 import streamlit as st
 from supabase import create_client
 import pandas as pd
@@ -178,9 +178,9 @@ else:
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
             opciones_grados = {
-                "Inicial": ["Maternal (0 a 1 año)", "Maternal (1 a 2 años)", "Maternal (2 a 3 años)", "Preescolar (3 a 4 años)", "Preescolar (4 a 5 años)", "Preescolar (5 a 6 años)"],
-                "Primaria": ["1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado"],
-                "Media General": ["1er Año", "2do Año", "3er Año", "4to Año", "5to Año", "6to Año"],
+                "Inicial": ["Maternal Convencional (0-1)", "Maternal Convencional (1-2)", "Maternal Convencional (2-3)", "Preescolar (3-4)", "Preescolar (4-5)", Preescolar (5-6)"],
+                "Primaria": ["1º Grado", "2º Grado", "3º Grado", "4º Grado", "5º Grado", "6º Grado"],
+                "Media General": ["1º Año", "2º Año", "3º Año", "4º Año", "5º Año", "6º Año"],
                 "Especial": ["Único"]
             }
 
