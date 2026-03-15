@@ -178,7 +178,7 @@ else:
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
             opciones_grados = {
-                "Inicial": ["Maternal Convencional (0-1)", "Maternal Convencional (1-2)", "Maternal Convencional (2-3)", "Preescolar (3-4)", "Preescolar (4-5)", "Preescolar (5-6)"],
+                "Inicial": ["Maternal Convencional (0-1)", "Maternal Convencional (1-2)", "Maternal Convencional (2-3)", "Preescolar (3-4)", "Preescolar (4-5)", Preescolar (5-6)"],
                 "Primaria": ["1º Grado", "2º Grado", "3º Grado", "4º Grado", "5º Grado", "6º Grado"],
                 "Media General": ["1º Año", "2º Año", "3º Año", "4º Año", "5º Año", "6º Año"],
                 "Especial": ["Único"]
