@@ -1,4 +1,4 @@
-# 15/03/2026 - Versión Corregida CDCE RIBAS (Grados Dinámicos y Preescolar)
+# respaldo 16-03-26 18:00 pm - Versión Personal Integrada
 import streamlit as st
 from supabase import create_client
 import pandas as pd
@@ -171,53 +171,107 @@ else:
 
     # Módulo: Cargar Datos
     if st.session_state.menu_actual == "Cargar Datos":
-        st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Asistencia</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Personal</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst_nombres = sorted(df_esc['nombre_actual'].tolist())
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
-            opciones_grados = {
-                "Inicial": ["Maternal Convencional (0-1)", "Maternal Convencional (1-2)", "Maternal Convencional (2-3)", "Preescolar (3-4)", "Preescolar (4-5)", "Preescolar (5-6)"],
-                "Primaria": ["1º Grado", "2º Grado", "3º Grado", "4º Grado", "5º Grado", "6º Grado"],
-                "Media General": ["1º Año", "2º Año", "3º Año", "4º Año", "5º Año", "6º Año"],
-                "Especial": ["Único"]
-            }
+            # PESTAÑAS PARA ORGANIZAR LA CARGA
+            tab1, tab2 = st.tabs(["👥 ESTUDIANTES", "💼 PERSONAL"])
 
-            nivel_sel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()))
-            
-            with st.form("form_carga_est", clear_on_submit=True):
-                col1, col2 = st.columns(2)
-                with col1:
-                    grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel_sel])
-                    mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido))
-                with col2:
-                    v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
-                    h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
-                    v_asist = st.number_input("Asistencia Promedio Varones:", min_value=0.0, step=0.1, format="%.2f")
-                    h_asist = st.number_input("Asistencia Promedio Hembras:", min_value=0.0, step=0.1, format="%.2f")
+            with tab1:
+                opciones_grados = {
+                    "Inicial": ["Maternal Convencional (0-1)", "Maternal Convencional (1-2)", "Maternal Convencional (2-3)", "Preescolar (3-4)", "Preescolar (4-5)", "Preescolar (5-6)"],
+                    "Primaria": ["1º Grado", "2º Grado", "3º Grado", "4º Grado", "5º Grado", "6º Grado"],
+                    "Media General": ["1º Año", "2º Año", "3º Año", "4º Año", "5º Año", "6º Año"],
+                    "Especial": ["Único"]
+                }
+                nivel_sel = st.selectbox("Nivel Educativo:", list(opciones_grados.keys()), key="nivel_est")
+                
+                with st.form("form_carga_est", clear_on_submit=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        grupo = st.selectbox("Grado / Sección / Grupo:", opciones_grados[nivel_sel])
+                        mes_c = st.selectbox("Mes que reporta:", meses_lista, index=meses_lista.index(mes_elegido), key="mes_est")
+                    with col2:
+                        v_ins = st.number_input("Varones Inscritos:", min_value=0, step=1)
+                        h_ins = st.number_input("Hembras Inscritas:", min_value=0, step=1)
+                        v_asist = st.number_input("Asistencia Promedio Varones:", min_value=0.0, step=0.1, format="%.2f")
+                        h_asist = st.number_input("Asistencia Promedio Hembras:", min_value=0.0, step=0.1, format="%.2f")
 
-                if st.form_submit_button("🚀 GUARDAR REGISTRO", use_container_width=True):
-                    if (v_asist > v_ins) or (h_asist > h_ins):
-                        st.error("❌ Error: La asistencia no puede ser mayor a la matrícula.")
-                    elif (v_ins + h_ins) == 0:
-                        st.warning("⚠️ Ingrese al menos un alumno.")
-                    else:
-                        total_m = v_ins + h_ins
-                        prom_r = ((v_asist + h_asist) / total_m * 100) if total_m > 0 else 0
-                        nuevo_reg = {
-                            "escuela_id": int(id_escuela), "nivel_educativo": nivel_sel,
-                            "detalle_grupo": grupo, "varones": v_ins, "hembras": h_ins,
-                            "total_matricula": total_m, "asistencia_varones": v_asist,
-                            "asistencia_hembras": h_asist, "asistencia_promedio_real": round(prom_r, 2),
-                            "mes_carga": mes_c, "ano_escolar": "2023-2024"
-                        }
-                        try:
-                            supabase.table("estudiantes").insert(nuevo_reg).execute()
-                            st.success(f"✅ ¡Registro de {grupo} guardado!")
-                            st.cache_data.clear()
-                        except Exception as e:
-                            st.error(f"Error: {e}")
+                    if st.form_submit_button("🚀 GUARDAR ESTUDIANTES", use_container_width=True):
+                        if (v_asist > v_ins) or (h_asist > h_ins):
+                            st.error("❌ Error: La asistencia no puede ser mayor a la matrícula.")
+                        elif (v_ins + h_ins) == 0:
+                            st.warning("⚠️ Ingrese al menos un alumno.")
+                        else:
+                            total_m = v_ins + h_ins
+                            prom_r = ((v_asist + h_asist) / total_m * 100) if total_m > 0 else 0
+                            nuevo_reg = {
+                                "escuela_id": int(id_escuela), "nivel_educativo": nivel_sel,
+                                "detalle_grupo": grupo, "varones": v_ins, "hembras": h_ins,
+                                "total_matricula": total_m, "asistencia_varones": v_asist,
+                                "asistencia_hembras": h_asist, "asistencia_promedio_real": round(prom_r, 2),
+                                "mes_carga": mes_c, "ano_escolar": "2023-2024"
+                            }
+                            try:
+                                supabase.table("estudiantes").insert(nuevo_reg).execute()
+                                st.success(f"✅ ¡Registro de {grupo} guardado!")
+                                st.cache_data.clear()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+
+            with tab2:
+                # LÓGICA DE PERSONAL (SUBCATEGORÍAS DINÁMICAS)
+                subcat_personal = {
+                    "Inicial": ["Maternal", "Preescolar"],
+                    "Primaria": ["Primaria"],
+                    "Media": ["Media General", "Media Técnica"],
+                    "Especial": ["Especial"],
+                    "Adultos": ["Adultos"]
+                }
+                
+                nivel_pers = st.selectbox("Nivel Educativo:", list(subcat_personal.keys()), key="nivel_per")
+                
+                # Pre-selección automática si solo hay una opción
+                opciones_disponibles = subcat_personal[nivel_pers]
+                sub_sel = st.selectbox("Sub-categoría:", opciones_disponibles, key="sub_per")
+
+                with st.form("form_carga_personal", clear_on_submit=True):
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        tipo_p = st.selectbox("Tipo de Personal:", ["Docente", "Administrativo", "Obrero", "Cocinera", "Vigilante"])
+                        mes_p = st.selectbox("Mes:", meses_lista, index=meses_lista.index(mes_elegido), key="mes_per")
+                    with c2:
+                        v_con = st.number_input("Varones Contratados:", min_value=0, step=1)
+                        h_con = st.number_input("Hembras Contratadas:", min_value=0, step=1)
+                    with c3:
+                        v_asist_p = st.number_input("Asistencia Promedio V:", min_value=0, step=1)
+                        h_asist_p = st.number_input("Asistencia Promedio H:", min_value=0, step=1)
+
+                    if st.form_submit_button("🚀 GUARDAR PERSONAL", use_container_width=True):
+                        if (v_asist_p > v_con) or (h_asist_p > h_con):
+                            st.error("❌ La asistencia no puede ser mayor al personal contratado.")
+                        else:
+                            reg_p = {
+                                "escuela_id": int(id_escuela),
+                                "nivel_educativo": nivel_pers,
+                                "detalle_grupo": sub_sel,
+                                "tipo_personal": tipo_p,
+                                "varones_contratados": v_con,
+                                "hembras_contratadas": h_con,
+                                "asistencia_v": v_asist_p,
+                                "asistencia_h": h_asist_p,
+                                "mes_carga": mes_p,
+                                "ano_escolar": "2023-2024"
+                            }
+                            try:
+                                supabase.table("personal").insert(reg_p).execute()
+                                st.success(f"✅ ¡Personal {tipo_p} en {sub_sel} guardado!")
+                                st.cache_data.clear()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
 
     # Módulo: Por Institución
     elif st.session_state.menu_actual == "Por Institución":
@@ -228,7 +282,6 @@ else:
             d = df_est[(df_est['escuela_id'] == int(id_i)) & (df_est['mes_carga'] == mes_elegido)].copy()
             
             if not d.empty:
-                # El drop_duplicates asegura que si hay basura en la BD, el reporte salga limpio
                 d = d.drop_duplicates(subset=['nivel_educativo', 'detalle_grupo', 'mes_carga', 'escuela_id'])
                 total_m = d['total_matricula'].sum()
                 total_asist_real = d['asistencia_varones'].sum() + d['asistencia_hembras'].sum()
