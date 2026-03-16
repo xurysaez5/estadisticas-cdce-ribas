@@ -242,7 +242,7 @@ else:
                 with st.form("form_carga_personal", clear_on_submit=True):
                     c1, c2, c3 = st.columns(3)
                     with c1:
-                        tipo_p = st.selectbox("Tipo de Personal:", ["Docente", "Administrativo", "Obrero", "Cocinera", "Vigilante"])
+                        tipo_p = st.selectbox("Tipo de Personal:", ["Docente", "Administrativo", "Obrero", "Cocineras", "Vigilante"])
                         mes_p = st.selectbox("Mes:", meses_lista, index=meses_lista.index(mes_elegido), key="mes_per")
                     with c2:
                         v_con = st.number_input("Varones Contratados:", min_value=0, step=1)
