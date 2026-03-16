@@ -225,11 +225,12 @@ else:
             with tab2:
                 # LÓGICA DE PERSONAL (SUBCATEGORÍAS DINÁMICAS)
                 subcat_personal = {
-                    "Inicial": ["Maternal", "Preescolar"],
-                    "Primaria": ["Primaria"],
-                    "Media": ["Media General", "Media Técnica"],
-                    "Especial": ["Especial"],
-                    "Adultos": ["Adultos"]
+                    "Inicial": ["maternal", "preescolar"],
+                    "Primaria": ["primaria"],
+                    "Media": ["media general", "media técnica"],
+                    "Especial": ["educacion especial"],
+                    "Adultos": ["jovenes y adultos"],
+                    "Otros": ["no aplica"]
                 }
                 
                 nivel_pers = st.selectbox("Nivel Educativo:", list(subcat_personal.keys()), key="nivel_per")
