@@ -86,12 +86,15 @@ def cargar_datos():
         con = supabase.table("condicion_laboral").select("*").execute()
         c_car = supabase.table("cat_cargo").select("*").execute()
         c_con = supabase.table("cat_condicion").select("*").execute()
+        # Añadimos cat_dependencia a la carga inicial
+        c_dep = supabase.table("cat_dependencia").select("*").execute()
         return (pd.DataFrame(esc.data), pd.DataFrame(est.data), pd.DataFrame(per.data),
-                pd.DataFrame(con.data), pd.DataFrame(c_car.data), pd.DataFrame(c_con.data))
+                pd.DataFrame(con.data), pd.DataFrame(c_car.data), pd.DataFrame(c_con.data),
+                pd.DataFrame(c_dep.data))
     except:
-        return [pd.DataFrame()] * 6
+        return [pd.DataFrame()] * 7
 
-df_esc_t, df_est, df_per, df_con, df_cat_car, df_cat_con = cargar_datos()
+df_esc_t, df_est, df_per, df_con, df_cat_car, df_cat_con, df_cat_dep = cargar_datos()
 df_esc = df_esc_t if st.session_state.rol == 'admin' else df_esc_t[df_esc_t['id'].isin(st.session_state.escuelas_asignadas)]
 
 config_graf = {'displayModeBar': False}
@@ -177,8 +180,8 @@ else:
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
             id_escuela = df_esc[df_esc['nombre_actual'] == inst_elegida]['id'].values[0]
             
-            # PESTAÑAS PARA ORGANIZAR LA CARGA
-            tab1, tab2 = st.tabs(["👥 ESTUDIANTES", "💼 PERSONAL"])
+            # PESTAÑAS PARA ORGANIZAR LA CARGA (Actualizado a 3 pestañas)
+            tab1, tab2, tab3 = st.tabs(["👥 ESTUDIANTES", "💼 PERSONAL", "📜 COND. LABORAL"])
 
             with tab1:
                 opciones_grados = {
@@ -223,7 +226,6 @@ else:
                                 st.error(f"Error: {e}")
 
             with tab2:
-                # LÓGICA DE PERSONAL (SUBCATEGORÍAS DINÁMICAS)
                 subcat_personal = {
                     "Inicial": ["maternal", "preescolar"],
                     "Primaria": ["primaria"],
@@ -232,10 +234,7 @@ else:
                     "Adultos": ["jovenes y adultos"],
                     "Otros": ["no aplica"]
                 }
-                
                 nivel_pers = st.selectbox("Nivel Educativo:", list(subcat_personal.keys()), key="nivel_per")
-                
-                # Pre-selección automática si solo hay una opción
                 opciones_disponibles = subcat_personal[nivel_pers]
                 sub_sel = st.selectbox("Sub-categoría:", opciones_disponibles, key="sub_per")
 
@@ -273,6 +272,47 @@ else:
                                 st.cache_data.clear()
                             except Exception as e:
                                 st.error(f"Error: {e}")
+
+            with tab3:
+                st.subheader("💼 Registro de Condición Laboral")
+                if not df_cat_car.empty and not df_cat_con.empty and not df_cat_dep.empty:
+                    with st.form("form_condicion_laboral", clear_on_submit=True):
+                        col_c1, col_c2 = st.columns(2)
+                        with col_c1:
+                            # Mapeo de nombres a IDs
+                            dict_cargos = dict(zip(df_cat_car['nombre'], df_cat_car['id']))
+                            dict_condic = dict(zip(df_cat_con['nombre'], df_cat_con['id']))
+                            dict_depend = dict(zip(df_cat_dep['nombre'], df_cat_dep['id']))
+
+                            cargo_sel = st.selectbox("Seleccione Cargo:", list(dict_cargos.keys()))
+                            cond_sel = st.selectbox("Condición de Servicio:", list(dict_condic.keys()))
+                            dep_sel = st.selectbox("Dependencia:", list(dict_depend.keys()))
+                        
+                        with col_c2:
+                            c_v = st.number_input("Cantidad Varones:", min_value=0, step=1)
+                            c_h = st.number_input("Cantidad Hembras:", min_value=0, step=1)
+                            mes_cl = st.selectbox("Mes de reporte:", meses_lista, index=meses_lista.index(mes_elegido), key="mes_cond")
+                        
+                        if st.form_submit_button("🚀 GUARDAR CONDICIÓN", use_container_width=True):
+                            if (c_v + c_h) == 0:
+                                st.warning("⚠️ Ingrese al menos un trabajador.")
+                            else:
+                                reg_cl = {
+                                    "escuela_id": int(id_escuela),
+                                    "cargo_id": int(dict_cargos[cargo_sel]),
+                                    "condicion_id": int(dict_condic[cond_sel]),
+                                    "dependencia_id": int(dict_depend[dep_sel]),
+                                    "varones": c_v, "hembras": c_h,
+                                    "mes": mes_cl, "ano_escolar": "2023-2024"
+                                }
+                                try:
+                                    supabase.table("condicion_laboral").insert(reg_cl).execute()
+                                    st.success(f"✅ ¡Condición de {cargo_sel} guardada!")
+                                    st.cache_data.clear()
+                                except Exception as e:
+                                    st.error(f"Error: {e}")
+                else:
+                    st.error("❌ Error al cargar catálogos de la base de datos.")
 
     # Módulo: Por Institución
     elif st.session_state.menu_actual == "Por Institución":
@@ -343,7 +383,7 @@ else:
                 st.plotly_chart(fig, use_container_width=True, config=config_graf)
             else: st.info("ℹ️ Sin registros.")
 
-    # Módulo: Condicion
+    # Módulo: Condicion (Visualización)
     elif st.session_state.menu_actual == "Condicion":
         st.markdown("<h2 style='text-align: center;'>Condición Laboral</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
@@ -353,9 +393,20 @@ else:
             if not d.empty:
                 d['Cargo'] = d['cargo_id'].map(df_cat_car.set_index('id')['nombre'].to_dict())
                 d['Condición'] = d['condicion_id'].map(df_cat_con.set_index('id')['nombre'].to_dict())
-                res = d.groupby(['Condición', 'Cargo']).size().reset_index(name='Cantidad')
+                
+                # Agrupamos por condición y cargo sumando varones y hembras
+                res = d.groupby(['Condición', 'Cargo'])[['varones', 'hembras']].sum().reset_index()
+                res['Total'] = res['varones'] + res['hembras']
+                
                 cols = st.columns(3)
                 for i, r in res.iterrows():
                     with cols[i % 3]: 
-                        st.markdown(f'<div class="st-card"><p style="color:#002D57; font-weight:bold; margin:0;">{r["Condición"]}</p><p style="font-size:0.8rem; margin:0;">{r["Cargo"]}</p><h3>{int(r["Cantidad"])}</h3></div>', unsafe_allow_html=True)
+                        st.markdown(f'''
+                            <div class="st-card">
+                                <p style="color:#002D57; font-weight:bold; margin:0;">{r["Condición"]}</p>
+                                <p style="font-size:0.8rem; margin:0;">{r["Cargo"]}</p>
+                                <h3 style="margin:5px 0;">{int(r["Total"])}</h3>
+                                <p style="font-size:0.7rem; color:#666; margin:0;">V: {int(r["varones"])} | H: {int(r["hembras"])}</p>
+                            </div>
+                        ''', unsafe_allow_html=True)
             else: st.warning("⚠️ Sin datos registrados.")
