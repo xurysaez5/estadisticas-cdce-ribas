@@ -372,7 +372,7 @@ else:
                 total_asist_apoyo = d['asistencia_v'].sum() + d['asistencia_h'].sum()
                 porc_apoyo = (total_asist_apoyo / total_contratado * 100) if total_contratado > 0 else 0
                 k1, k2, k3 = st.columns(3)
-                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL PERSONAL APOYO</p><p class="val-kpi">{int(total_contratado)}</p></div>', unsafe_allow_html=True)
+                with k1: st.markdown(f'<div class="st-card"><p class="tit-kpi">TOTAL PERSONAL NO DOCENTE</p><p class="val-kpi">{int(total_contratado)}</p></div>', unsafe_allow_html=True)
                 with k2: st.markdown(f'<div class="st-card"><p class="tit-kpi">ASISTENCIA PROMEDIO</p><p class="val-kpi">{int(total_asist_apoyo)}</p></div>', unsafe_allow_html=True)
                 with k3: st.markdown(f'<div class="st-card"><p class="tit-kpi">% ASISTENCIA</p><p class="val-kpi">{porc_apoyo:.1f}%</p></div>', unsafe_allow_html=True)
                 
