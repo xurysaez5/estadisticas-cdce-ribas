@@ -63,7 +63,7 @@ if not st.session_state.autenticado:
 st.markdown("""
 <style>
     header { visibility: visible !important; background-color: #002D57 !important; }
-    [data-testid="stAppViewContainer"] { background-color: #9BF0FB !important; }
+    [data-testid="stAppViewContainer"] { background-color: #FFC000 !important; }
     [data-testid="stSidebar"] { background-color: #FFFFFF !important; border-right: 2px solid #002D57 !important; }
     .st-card {
         background-color: #FFFFFF !important; color: #002D57 !important;
