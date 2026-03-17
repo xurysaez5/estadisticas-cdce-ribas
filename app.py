@@ -174,7 +174,7 @@ else:
 
     # Módulo: Cargar Datos
     if st.session_state.menu_actual == "Cargar Datos":
-        st.markdown("<h2 style='text-align: center;'>Registro de Matrícula y Personal</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>Registro Estadístico Mensual</h2>", unsafe_allow_html=True)
         if not df_esc.empty:
             inst_nombres = sorted(df_esc['nombre_actual'].tolist())
             inst_elegida = st.selectbox("Seleccione Institución a reportar:", inst_nombres)
