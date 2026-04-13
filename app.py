@@ -37,8 +37,11 @@ if not st.session_state.autenticado:
 #   col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        # INSERTA EL BLOQUE AQUÍ (Encima de la lógica del formulario)
-        st.error("<h3 style='text-align: center; margin: 0;'>📢 SISTEMA MIGRADO</h3>", icon="🚨")
+        st.markdown("""
+        <div style="background-color: #ff4b4b; color: white; padding: 15px; border-radius: 10px; text-align: center; font-family: sans-serif;">
+            <h3 style="margin: 0;">🚨 📢 SISTEMA MIGRADO</h3>
+        </div>
+        """, unsafe_allow_html=True)        
         st.markdown("<div style='text-align: center;'>Visite la nueva dirección:</div>", unsafe_allow_html=True)
         st.link_button("🌐 Acceder al Nuevo Sistema", "https://estadistica-cdce-ribas.streamlit.app/", use_container_width=True)
     
