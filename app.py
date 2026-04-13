@@ -38,7 +38,7 @@ if not st.session_state.autenticado:
     
     with col2:
         # INSERTA EL BLOQUE AQUÍ (Encima de la lógica del formulario)
-        st.error("### 📢 SISTEMA MIGRADO")
+        st.error("<h3 style='text-align: center; margin: 0;'>📢 SISTEMA MIGRADO</h3>", icon="🚨")
         st.info("""
             **Atención:** Esta plataforma ha sido trasladada a una nueva dirección para mejorar el rendimiento y la seguridad.
             
