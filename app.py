@@ -33,7 +33,7 @@ if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     if not st.session_state.autenticado:
-    st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
