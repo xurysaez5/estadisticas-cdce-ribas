@@ -32,6 +32,27 @@ if 'autenticado' not in st.session_state:
 if not st.session_state.autenticado:
     st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
+    if not st.session_state.autenticado:
+    st.markdown("<h2 style='text-align: center;'>🔐 Acceso Estadísticas CDCE RIBAS</h2>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        # INSERTA EL BLOQUE AQUÍ (Encima de la lógica del formulario)
+        st.error("### 📢 SISTEMA MIGRADO")
+        st.info("""
+            **Atención:** Esta plataforma ha sido trasladada a una nueva dirección para mejorar el rendimiento y la seguridad.
+            
+            Por favor, haga clic en el siguiente enlace para continuar:
+            👉 [https://estadistica-cdce-ribas.streamlit.app/](https://estadistica-cdce-ribas.streamlit.app/)
+        """)
+        
+        # Si quieres que ya no puedan ni siquiera intentar escribir,
+        # pon un st.stop() aquí mismo:
+        st.stop() 
+
+        # El código que sigue (st.form) ya no se ejecutará por el st.stop()
+        with st.form("login_form"):
+            u_raw = st.text_input("Cédula de Identidad:", placeholder="Solo números").strip()
     with col2:
         with st.form("login_form"):
             u_raw = st.text_input("Cédula de Identidad:", placeholder="Solo números").strip()
