@@ -39,7 +39,7 @@ if not st.session_state.autenticado:
     with col2:
         st.markdown("""
         <div style="background-color: #0D851B; color: white; padding: 15px; border-radius: 10px; text-align: center; font-family: sans-serif;">
-            <h4 style="margin: 0;">📢 SISTEMA MIGRADO🚨</h4>
+            <h4 style="margin: 0;">🚨 SISTEMA MIGRADO 📢</h4>
         </div>
         """, unsafe_allow_html=True)        
         st.markdown("<div style='text-align: center;'>Visite la nueva dirección:</div>", unsafe_allow_html=True)
